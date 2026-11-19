@@ -11,6 +11,6 @@ void pendo_normalize(const char* input, char* output, int capacity) {
         [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
     int n=std::min(static_cast<int>(s.size()), capacity-1);
     for (int i=0;i<n;i++) output[i]=s[i];
-    output[n]='\\0';
+    output[n]='\0';
 }
 }

@@ -37,7 +37,7 @@ class PendoBackend:
     def configured(self):
         return bool(self.url.startswith("https://") and self.anon_key)
 
-    def _request(self, path, method="GET", payload=None, extra_headers=None):
+    def _request(self, path, method="GET", payload=None, extra_headers=None, _retry=True):
         if not self.configured:
             raise BackendError("Backend is not configured. Add the Supabase URL and anon key to backend_config.json.")
         data = None if payload is None else json.dumps(payload).encode("utf-8")
@@ -53,6 +53,11 @@ class PendoBackend:
                 raw = response.read().decode("utf-8")
                 return json.loads(raw) if raw else None
         except urllib.error.HTTPError as exc:
+            # Access tokens last ~1 hour; renew once with the refresh token, then retry.
+            if exc.code == 401 and _retry and self.refresh_token and not path.startswith("/auth/"):
+                if self._refresh_session():
+                    return self._request(path, method, payload, extra_headers, _retry=False)
+                raise BackendError("Your session expired. Please sign out and sign in again.") from exc
             try:
                 body = json.loads(exc.read().decode("utf-8"))
                 message = body.get("msg") or body.get("message") or body.get("error_description") or body.get("error") or str(exc)
@@ -83,11 +88,29 @@ class PendoBackend:
 
     def sign_in(self, email, password):
         result = self._request("/auth/v1/token?grant_type=password", "POST", {"email": email, "password": password})
+        if not result:
+            raise BackendError("Sign-in failed. Please try again.")
         self._set_session(result)
         return self.user
 
+    def _refresh_session(self):
+        token = self.refresh_token
+        self.access_token = None  # don't send the expired token to the refresh endpoint
+        try:
+            result = self._request("/auth/v1/token?grant_type=refresh_token", "POST",
+                                   {"refresh_token": token}, _retry=False)
+        except BackendError:
+            self.refresh_token = None
+            return False
+        if not result or not result.get("access_token"):
+            self.refresh_token = None
+            return False
+        self.access_token = result.get("access_token")
+        self.refresh_token = result.get("refresh_token") or token
+        return True
+
     def sign_up(self, email, password):
-        result = self._request("/auth/v1/signup", "POST", {"email": email, "password": password})
+        result = self._request("/auth/v1/signup", "POST", {"email": email, "password": password}) or {}
         if result.get("access_token"):
             self._set_session(result)
         return result
