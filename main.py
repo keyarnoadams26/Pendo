@@ -139,6 +139,9 @@ KV = r"""
             SoftButton:
                 text: 'Create an account'
                 on_release: app.signup()
+            SoftButton:
+                text: 'Forgot password?'
+                on_release: app.reset_password(email.text)
         Label:
             text: 'Securely keep your plans, tasks and essentials together.'
             color: .53, .59, .67, 1
@@ -716,6 +719,31 @@ class PendoApp(App):
             args=('signup', email, password),
             daemon=True
         ).start()
+
+    def reset_password(self, email):
+        email = (email or '').strip()
+        if not email or '@' not in email or '.' not in email.rsplit('@', 1)[-1]:
+            self.notice('Enter your account email address first.')
+            return
+        if not self.backend.configured:
+            self.notice('Password reset needs a configured Supabase connection.')
+            return
+        self.notice('Requesting a password reset email…')
+        threading.Thread(
+            target=self._password_reset_worker, args=(email,), daemon=True
+        ).start()
+
+    def _password_reset_worker(self, email):
+        try:
+            self.backend.reset_password(email)
+            Clock.schedule_once(
+                lambda _dt: self.notice(
+                    'If an account exists for that address, Supabase will send password reset instructions. Check your email.'
+                ), 0
+            )
+        except BackendError as exc:
+            message = str(exc)
+            Clock.schedule_once(lambda _dt: self.notice(message), 0)
 
     def _auth_worker(self, action, email, password):
         try:
