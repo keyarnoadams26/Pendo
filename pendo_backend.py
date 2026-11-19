@@ -109,22 +109,34 @@ class PendoBackend:
         self.refresh_token = result.get("refresh_token") or token
         return True
 
+    def _auth_redirect_url(self):
+        """Return the optional app callback URL configured for Supabase Auth."""
+        try:
+            with open(self.config_path, "r", encoding="utf-8") as config_file:
+                config = json.load(config_file)
+            return str(config.get("auth_redirect_url", "") or "").strip()
+        except (OSError, ValueError, TypeError):
+            return ""
+
+    @staticmethod
+    def _with_redirect(path, redirect_url):
+        if not redirect_url:
+            return path
+        separator = "&" if "?" in path else "?"
+        return path + separator + urllib.parse.urlencode({"redirect_to": redirect_url})
+
     def sign_up(self, email, password):
-        result = self._request("/auth/v1/signup", "POST", {"email": email, "password": password}) or {}
+        # Supabase otherwise falls back to the project's Site URL, which is
+        # commonly left at localhost during development. Configure
+        # auth_redirect_url with an allowed production/app callback URL.
+        path = self._with_redirect("/auth/v1/signup", self._auth_redirect_url())
+        result = self._request(path, "POST", {"email": email, "password": password}) or {}
         if result.get("access_token"):
             self._set_session(result)
         return result
 
     def reset_password(self, email):
-        redirect_url = ""
-        try:
-            with open(self.config_path, "r", encoding="utf-8") as f:
-                redirect_url = str(json.load(f).get("auth_redirect_url", "")).strip()
-        except (OSError, ValueError, TypeError):
-            pass
-        path = "/auth/v1/recover"
-        if redirect_url:
-            path += "?redirect_to=" + urllib.parse.quote(redirect_url, safe="")
+        path = self._with_redirect("/auth/v1/recover", self._auth_redirect_url())
         return self._request(path, "POST", {"email": email})
 
     def _set_session(self, result):
