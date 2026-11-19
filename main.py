@@ -835,24 +835,22 @@ class PendoApp(App):
         layout.clear_widgets()
 
         items = list(self.DEMO_ITEMS.get(self.module_key, []))
+        local_items = []
+        cloud_items = []
         if self.backend.configured and self.backend.user:
             if self.cloud_module == self.module_key:
-                items.extend(self.cloud_records)
+                cloud_items = list(self.cloud_records)
         else:
-            local_items = self.records.get(self.module_key, [])
-            items.extend(local_items if isinstance(local_items, list) else [])
+            stored = self.records.get(self.module_key, [])
+            local_items = stored if isinstance(stored, list) else []
+        items.extend(local_items)
 
-        for item in items:
+        def add_row(label, callback=None):
             row = Button(
-                text='   ' + str(item),
-                size_hint_y=None,
-                height=dp(58),
-                background_normal='',
-                background_down='',
-                background_color=(0, 0, 0, 0),
-                color=(.12, .19, .3, 1),
-                halign='left',
-                valign='middle'
+                text='   ' + str(label), size_hint_y=None, height=dp(58),
+                background_normal='', background_down='',
+                background_color=(0, 0, 0, 0), color=(.12, .19, .3, 1),
+                halign='left', valign='middle'
             )
             row.text_size = (dp(290), None)
             with row.canvas.before:
@@ -863,7 +861,16 @@ class PendoApp(App):
                 instance._card_bg.pos = instance.pos
                 instance._card_bg.size = instance.size
             row.bind(pos=update_row_bg, size=update_row_bg)
+            if callback:
+                row.bind(on_release=lambda *_args: callback())
             layout.add_widget(row)
+
+        for item in items:
+            add_row(item)
+        for record in cloud_items:
+            content = record.get('content') or {}
+            label = content.get('text', str(content)) if isinstance(content, dict) else str(content)
+            add_row(label + '    ·    Edit / delete', lambda rec=record: self.show_record_actions(rec))
 
     def add_module_item(self, value):
         value = value.strip()
@@ -894,12 +901,8 @@ class PendoApp(App):
     def _load_cloud_records_worker(self, kind):
         try:
             rows = self.backend.list_records(self.RECORD_TYPES[kind])
-            values = [
-                row.get('content', {}).get('text', str(row.get('content', '')))
-                for row in rows
-            ]
             Clock.schedule_once(
-                lambda _dt: self._apply_cloud_records(kind, values), 0
+                lambda _dt: self._apply_cloud_records(kind, rows), 0
             )
         except BackendError as exc:
             message = str(exc)
@@ -912,12 +915,8 @@ class PendoApp(App):
         try:
             self.backend.save_record(record_type, {'text': value})
             rows = self.backend.list_records(record_type)
-            values = [
-                row.get('content', {}).get('text', str(row.get('content', '')))
-                for row in rows
-            ]
             Clock.schedule_once(
-                lambda _dt: self._apply_cloud_records(kind, values), 0
+                lambda _dt: self._apply_cloud_records(kind, rows), 0
             )
             Clock.schedule_once(
                 lambda _dt: self.notice('Saved to your Pendo account.'), 0
@@ -928,12 +927,63 @@ class PendoApp(App):
                 lambda _dt: self._cloud_error(kind, message), 0
             )
 
-    def _apply_cloud_records(self, kind, values):
+    def _apply_cloud_records(self, kind, rows):
         self.cloud_module = kind
-        self.cloud_records = values
+        self.cloud_records = rows
         self.sync_status = 'Cloud records synced.'
         if self.module_key == kind and self.root.current == 'module':
             self.refresh_module()
+
+    def show_record_actions(self, record):
+        from kivy.uix.popup import Popup
+        from kivy.uix.boxlayout import BoxLayout
+        from kivy.uix.textinput import TextInput
+        from kivy.uix.button import Button
+        from kivy.metrics import dp
+
+        content = record.get('content') or {}
+        current_text = content.get('text', '') if isinstance(content, dict) else str(content)
+        panel = BoxLayout(orientation='vertical', spacing=dp(10), padding=dp(12))
+        editor = TextInput(text=str(current_text), multiline=False, size_hint_y=None, height=dp(48))
+        panel.add_widget(editor)
+        actions = BoxLayout(size_hint_y=None, height=dp(46), spacing=dp(8))
+        save = Button(text='Save changes')
+        delete = Button(text='Delete')
+        actions.add_widget(save)
+        actions.add_widget(delete)
+        panel.add_widget(actions)
+        popup = Popup(title='Edit record', content=panel, size_hint=(.9, .32))
+        save.bind(on_release=lambda *_: (popup.dismiss(), self._update_cloud_record(record.get('id'), editor.text)))
+        delete.bind(on_release=lambda *_: (popup.dismiss(), self._delete_cloud_record(record.get('id'))))
+        popup.open()
+
+    def _update_cloud_record(self, record_id, value):
+        value = (value or '').strip()
+        if not value:
+            self.notice('A record cannot be empty.')
+            return
+        kind = self.module_key
+        self.sync_status = 'Updating cloud record…'
+        threading.Thread(target=self._record_change_worker, args=('update', kind, record_id, value), daemon=True).start()
+
+    def _delete_cloud_record(self, record_id):
+        kind = self.module_key
+        self.sync_status = 'Deleting cloud record…'
+        threading.Thread(target=self._record_change_worker, args=('delete', kind, record_id, ''), daemon=True).start()
+
+    def _record_change_worker(self, action, kind, record_id, value):
+        try:
+            if action == 'update':
+                self.backend.update_record(record_id, {'text': value})
+            else:
+                self.backend.delete_record(record_id)
+            rows = self.backend.list_records(self.RECORD_TYPES[kind])
+            Clock.schedule_once(lambda _dt: self._apply_cloud_records(kind, rows), 0)
+            message = 'Record updated.' if action == 'update' else 'Record deleted.'
+            Clock.schedule_once(lambda _dt: self.notice(message), 0)
+        except BackendError as exc:
+            message = str(exc)
+            Clock.schedule_once(lambda _dt: self._cloud_error(kind, message), 0)
 
     def _cloud_error(self, kind, message):
         if self.module_key == kind:
