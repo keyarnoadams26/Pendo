@@ -643,6 +643,7 @@ class PendoApp(App):
         ):
             manager.add_widget(screen)
 
+        self._progress_popup = None
         self.store_path = os.path.join(self.user_data_dir, 'pendo_demo.json')
         self.backend = PendoBackend(
             os.path.join(os.path.dirname(__file__), 'backend_config.json')
@@ -683,7 +684,7 @@ class PendoApp(App):
             return
 
         if self.backend.configured:
-            self.notice('Signing in…')
+            self.show_progress('Signing in…')
             threading.Thread(
                 target=self._auth_worker,
                 args=('signin', email, password),
@@ -713,7 +714,7 @@ class PendoApp(App):
             self.notice('Add your Supabase URL and anon key to backend_config.json first.')
             return
 
-        self.notice('Creating account…')
+        self.show_progress('Creating account…')
         threading.Thread(
             target=self._auth_worker,
             args=('signup', email, password),
@@ -768,6 +769,9 @@ class PendoApp(App):
                     )
         except BackendError as exc:
             message = str(exc)
+            Clock.schedule_once(lambda _dt: self.notice(message), 0)
+        except Exception:
+            message = 'Account request failed unexpectedly. Please check your connection and try again.'
             Clock.schedule_once(lambda _dt: self.notice(message), 0)
 
     def _auth_success(self, user, profile):
@@ -1021,14 +1025,53 @@ class PendoApp(App):
         self.root.current = 'login'
         self.notice('Signed out.')
 
+    def show_progress(self, message):
+        from kivy.uix.popup import Popup
+        from kivy.uix.label import Label
+        from kivy.uix.boxlayout import BoxLayout
+        from kivy.metrics import dp
+
+        self.dismiss_progress()
+        panel = BoxLayout(orientation='vertical', padding=dp(16), spacing=dp(8))
+        label = Label(
+            text=str(message), halign='center', valign='middle',
+            text_size=(dp(260), None), size_hint_y=None
+        )
+        label.bind(texture_size=lambda instance, size: setattr(instance, 'height', max(dp(44), size[1])))
+        panel.add_widget(label)
+        self._progress_popup = Popup(
+            title='Please wait', content=panel, size_hint=(.86, .28),
+            auto_dismiss=False
+        )
+        self._progress_popup.open()
+
+    def dismiss_progress(self):
+        popup = getattr(self, '_progress_popup', None)
+        if popup:
+            popup.dismiss()
+            self._progress_popup = None
+
     def notice(self, message):
         from kivy.uix.popup import Popup
         from kivy.uix.label import Label
+        from kivy.uix.boxlayout import BoxLayout
+        from kivy.uix.scrollview import ScrollView
+        from kivy.metrics import dp
 
+        self.dismiss_progress()
+        panel = BoxLayout(orientation='vertical', padding=dp(12))
+        scroll = ScrollView(do_scroll_x=False, do_scroll_y=True)
+        label = Label(
+            text=str(message), size_hint_y=None,
+            halign='left', valign='middle',
+            text_size=(dp(270), None)
+        )
+        label.bind(texture_size=lambda instance, size: setattr(instance, 'height', max(dp(48), size[1])))
+        scroll.add_widget(label)
+        panel.add_widget(scroll)
         Popup(
-            title='Pendo',
-            content=Label(text=str(message)),
-            size_hint=(.84, .3)
+            title='Pendo', content=panel, size_hint=(.88, .42),
+            auto_dismiss=True
         ).open()
 
 
