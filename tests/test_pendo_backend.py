@@ -103,6 +103,24 @@ class PendoBackendTests(unittest.TestCase):
         self.assertEqual(request.call_args.args[0], "/auth/v1/user")
         self.assertEqual(request.call_args.args[1], "PUT")
 
+
+    def test_google_oauth_url_uses_supabase_and_native_callback(self):
+        callback = PendoBackend.AUTH_CALLBACK_URL
+        self.write_config(
+            supabase_url="https://example.supabase.co",
+            supabase_anon_key="public",
+            auth_redirect_url=callback,
+        )
+        backend = PendoBackend(self.config_path)
+        parsed = urllib.parse.urlsplit(backend.google_oauth_url())
+        self.assertEqual(parsed.scheme, "https")
+        self.assertEqual(parsed.netloc, "example.supabase.co")
+        self.assertEqual(parsed.path, "/auth/v1/authorize")
+        params = urllib.parse.parse_qs(parsed.query)
+        self.assertEqual(params["provider"], ["google"])
+        self.assertEqual(params["redirect_to"], [callback])
+        self.assertEqual(params["flow_type"], ["implicit"])
+
     def test_sign_in_stores_session(self):
         self.write_config(supabase_url="https://example.supabase.co", supabase_anon_key="public")
         backend = PendoBackend(self.config_path)

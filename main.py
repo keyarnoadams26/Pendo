@@ -23,14 +23,14 @@ KV = r"""
     bold: True
     font_size: sp(14)
     size_hint_y: None
-    height: dp(50)
+    height: dp(52)
     canvas.before:
         Color:
             rgba: (0.12, 0.29, 0.68, 1) if self.state == 'normal' else (0.08, 0.22, 0.55, 1)
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: [dp(14)]
+            radius: [dp(16)]
 
 <SoftButton@Button>:
     background_normal: ''
@@ -47,7 +47,7 @@ KV = r"""
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: [dp(13)]
+            radius: [dp(15)]
 
 <Card@BoxLayout>:
     orientation: 'vertical'
@@ -61,7 +61,7 @@ KV = r"""
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: [dp(18)]
+            radius: [dp(20)]
 
 <ScreenTitle@Label>:
     color: .07, .12, .22, 1
@@ -95,7 +95,7 @@ KV = r"""
         Widget:
             size_hint_y: .7
         Label:
-            text: 'pendo'
+            text: 'pendo  •'
             font_size: sp(38)
             bold: True
             color: .07, .12, .22, 1
@@ -136,6 +136,9 @@ KV = r"""
             PrimaryButton:
                 text: 'Sign in'
                 on_release: app.login(email.text, password.text)
+            SoftButton:
+                text: 'G   Continue with Google'
+                on_release: app.google_sign_in()
             SoftButton:
                 text: 'Create an account'
                 on_release: app.signup()
@@ -308,7 +311,7 @@ KV = r"""
             text: 'Make space for what matters today.'
         Card:
             Label:
-                text: 'YOUR PENDO SPACE'
+                text: '✦  YOUR PENDO SPACE'
                 font_size: sp(10)
                 bold: True
                 color: .42, .49, .59, 1
@@ -334,7 +337,7 @@ KV = r"""
                 size_hint_y: None
                 height: self.texture_size[1] + dp(6)
         Label:
-            text: 'YOUR TOOLS'
+            text: 'YOUR TOOLS  ·  QUICK ACCESS'
             font_size: sp(11)
             bold: True
             color: .43, .50, .60, 1
@@ -348,13 +351,13 @@ KV = r"""
             size_hint_y: None
             height: dp(174)
             SoftButton:
-                text: '✓  Tasks'
+                text: '☑  Tasks'
                 on_release: app.go('tasks')
             SoftButton:
                 text: '▦  Calendar'
                 on_release: app.go('calendar')
             SoftButton:
-                text: 'R  Bills'
+                text: '◷  Bills'
                 on_release: app.go('bills')
             SoftButton:
                 text: '☷  Lists'
@@ -525,6 +528,16 @@ KV = r"""
             text: 'Settings & account'
         HelperText:
             text: 'Manage your Pendo account and plan.'
+        Card:
+            Label:
+                text: '✦  ACCOUNT OVERVIEW'
+                color: .12, .29, .68, 1
+                bold: True
+                font_size: sp(11)
+                halign: 'left'
+                text_size: self.width, None
+                size_hint_y: None
+                height: self.texture_size[1] + dp(6)
         Card:
             Label:
                 text: 'ACCOUNT'
@@ -836,6 +849,29 @@ class PendoApp(App):
         self.username = email.split('@')[0].title() or 'there'
         self.root.current = 'plans'
         self.notice('Demo mode: Supabase is not configured yet.')
+
+
+    def google_sign_in(self):
+        """Open Supabase OAuth in the system browser; Google credentials stay with Google."""
+        if not self.backend.configured:
+            self.notice('Google sign-in needs a configured Supabase connection.')
+            return
+        try:
+            auth_url = self.backend.google_oauth_url()
+            try:
+                from jnius import autoclass
+                Intent = autoclass('android.content.Intent')
+                Uri = autoclass('android.net.Uri')
+                PythonActivity = autoclass('org.kivy.android.PythonActivity')
+                intent = Intent(Intent.ACTION_VIEW, Uri.parse(auth_url))
+                PythonActivity.mActivity.startActivity(intent)
+            except ImportError:
+                import webbrowser
+                if not webbrowser.open(auth_url):
+                    raise RuntimeError('Could not open the browser.')
+            self.notice('Continue securely with Google in your browser.')
+        except (BackendError, RuntimeError) as exc:
+            self.notice(str(exc))
 
     def continue_demo(self):
         """Open the app without cloud authentication; records stay on this device."""

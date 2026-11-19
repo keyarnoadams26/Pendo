@@ -115,6 +115,18 @@ class PendoBackend:
         except OSError as exc:
             raise BackendError("Could not reach Pendo's backend. Network connection failed: " + str(exc)) from exc
 
+
+    def google_oauth_url(self):
+        """Build the Supabase-hosted Google OAuth URL using the native app callback."""
+        if not self.configured:
+            raise BackendError("Google sign-in needs a configured Supabase connection.")
+        query = urllib.parse.urlencode({
+            "provider": "google",
+            "redirect_to": self._auth_redirect_url() or self.AUTH_CALLBACK_URL,
+            "flow_type": "implicit",
+        })
+        return self.url + "/auth/v1/authorize?" + query
+
     def sign_in(self, email, password):
         result = self._request("/auth/v1/token?grant_type=password", "POST", {"email": email, "password": password})
         if not result:
