@@ -1,4 +1,5 @@
 {
   "supabase_url": "https://fitpsqtduajzmuraypio.supabase.co/",
-  "supabase_anon_key": "sb_publishable_XRU9Aj0cXN9NQP7LX1fX3g_diR4hMyL"
+  "supabase_anon_key": "sb_publishable_XRU9Aj0cXN9NQP7LX1fX3g_diR4hMyL",
+  "auth_redirect_url": ""
 }
