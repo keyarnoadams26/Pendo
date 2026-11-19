@@ -1,4 +1,5 @@
 import json
+import ssl
 import os
 import tempfile
 import unittest
@@ -87,6 +88,19 @@ class PendoBackendTests(unittest.TestCase):
         with patch.object(backend, "_request", return_value=None):
             with self.assertRaises(BackendError):
                 backend.sign_in("person@example.com", "password")
+
+
+    def test_malformed_json_object_does_not_crash_config_loading(self):
+        with open(self.config_path, "w", encoding="utf-8") as handle:
+            json.dump(["not", "an", "object"], handle)
+        backend = PendoBackend(self.config_path)
+        self.assertFalse(backend.configured)
+
+    def test_ssl_context_keeps_certificate_verification_enabled(self):
+        with patch("pendo_backend.certifi", None):
+            context = PendoBackend._ssl_context()
+        self.assertEqual(context.verify_mode, ssl.CERT_REQUIRED)
+        self.assertTrue(context.check_hostname)
 
 
 if __name__ == "__main__":
