@@ -17,97 +17,136 @@ KV = r"""
 
 <PrimaryButton@Button>:
     background_normal: ''
-    background_color: (0.12, 0.29, 0.68, 1) if self.state == 'normal' else (0.09, 0.23, 0.56, 1)
+    background_down: ''
+    background_color: 0, 0, 0, 0
     color: 1, 1, 1, 1
     bold: True
     font_size: sp(14)
+    size_hint_y: None
+    height: dp(50)
     canvas.before:
         Color:
-            rgba: (0.12, 0.29, 0.68, 1)
+            rgba: (0.12, 0.29, 0.68, 1) if self.state == 'normal' else (0.08, 0.22, 0.55, 1)
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: [dp(12)]
+            radius: [dp(14)]
 
 <SoftButton@Button>:
     background_normal: ''
+    background_down: ''
     background_color: 0, 0, 0, 0
     color: .12, .20, .34, 1
     bold: True
     font_size: sp(13)
+    size_hint_y: None
+    height: dp(48)
     canvas.before:
         Color:
-            rgba: (.94, .96, .99, 1)
+            rgba: (.92, .95, .99, 1) if self.state == 'normal' else (.86, .91, .98, 1)
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: [dp(12)]
+            radius: [dp(13)]
 
 <Card@BoxLayout>:
     orientation: 'vertical'
     padding: dp(16)
-    spacing: dp(10)
+    spacing: dp(9)
     size_hint_y: None
     height: self.minimum_height
     canvas.before:
         Color:
-            rgba: 1, 1, 1, 1
+            rgba: (1, 1, 1, 1)
         RoundedRectangle:
             pos: self.pos
             size: self.size
             radius: [dp(18)]
 
+<ScreenTitle@Label>:
+    color: .07, .12, .22, 1
+    font_size: sp(23)
+    bold: True
+    size_hint_y: None
+    height: dp(42)
+    halign: 'left'
+    text_size: self.size
+
+<HelperText@Label>:
+    color: .43, .50, .60, 1
+    font_size: sp(12)
+    size_hint_y: None
+    height: dp(34)
+    halign: 'left'
+    text_size: self.size
+
 <LoginScreen>:
     name: 'login'
     BoxLayout:
         orientation: 'vertical'
-        padding: dp(26)
-        spacing: dp(14)
+        padding: dp(24)
+        spacing: dp(13)
         canvas.before:
             Color:
-                rgba: (.96, .97, .99, 1)
+                rgba: (.955, .968, .985, 1)
             Rectangle:
                 pos: self.pos
                 size: self.size
+        Widget:
+            size_hint_y: .7
         Label:
             text: 'pendo'
-            font_size: sp(32)
+            font_size: sp(38)
             bold: True
             color: .07, .12, .22, 1
             size_hint_y: None
-            height: dp(75)
+            height: dp(55)
         Label:
-            text: 'Your life, on track.'
-            color: .42, .49, .59, 1
+            text: 'A calmer way to organise your life.'
+            color: .43, .50, .60, 1
+            font_size: sp(14)
+            size_hint_y: None
+            height: dp(30)
+        Card:
+            TextInput:
+                id: email
+                hint_text: 'Email address'
+                multiline: False
+                size_hint_y: None
+                height: dp(50)
+                padding: [dp(14), dp(13)]
+                background_normal: ''
+                background_active: ''
+                background_color: (.95, .97, .99, 1)
+                foreground_color: (.10, .16, .25, 1)
+                cursor_color: (.12, .29, .68, 1)
+            TextInput:
+                id: password
+                hint_text: 'Password'
+                password: True
+                multiline: False
+                size_hint_y: None
+                height: dp(50)
+                padding: [dp(14), dp(13)]
+                background_normal: ''
+                background_active: ''
+                background_color: (.95, .97, .99, 1)
+                foreground_color: (.10, .16, .25, 1)
+                cursor_color: (.12, .29, .68, 1)
+            PrimaryButton:
+                text: 'Sign in'
+                on_release: app.login(email.text, password.text)
+            SoftButton:
+                text: 'Create an account'
+                on_release: app.signup()
+        Label:
+            text: 'Securely keep your plans, tasks and essentials together.'
+            color: .53, .59, .67, 1
+            font_size: sp(11)
             size_hint_y: None
             height: dp(28)
-        TextInput:
-            id: email
-            hint_text: 'Email address'
-            multiline: False
-            size_hint_y: None
-            height: dp(52)
-        TextInput:
-            id: password
-            hint_text: 'Password'
-            password: True
-            multiline: False
-            size_hint_y: None
-            height: dp(52)
-        PrimaryButton:
-            text: 'Sign in'
-            size_hint_y: None
-            height: dp(50)
-            on_release: app.login(email.text, password.text)
-        SoftButton:
-            text: 'Create an account'
-            size_hint_y: None
-            height: dp(48)
-            on_release: app.signup()
-        Label:
-            text: 'Demo mode works without Supabase configuration.'
-            color: .5, .56, .64, 1
-            font_size: sp(11)
+        Widget:
+            size_hint_y: .8
 
 <PlanScreen>:
     name: 'plans'
@@ -117,18 +156,16 @@ KV = r"""
         spacing: dp(12)
         canvas.before:
             Color:
-                rgba: (.96, .97, .99, 1)
+                rgba: (.955, .968, .985, 1)
             Rectangle:
                 pos: self.pos
                 size: self.size
-        Label:
-            text: 'Choose your Pendo'
-            font_size: sp(23)
-            bold: True
-            color: .07, .12, .22, 1
-            size_hint_y: None
-            height: dp(45)
+        ScreenTitle:
+            text: 'Choose your plan'
+        HelperText:
+            text: 'Start with the essentials. Upgrade whenever you need more.'
         ScrollView:
+            do_scroll_x: False
             GridLayout:
                 cols: 1
                 spacing: dp(12)
@@ -136,59 +173,98 @@ KV = r"""
                 height: self.minimum_height
                 Card:
                     Label:
-                        text: 'FREE  ·  R0'
+                        text: 'FREE'
                         bold: True
-                        color: .08, .14, .25, 1
+                        font_size: sp(12)
+                        color: .12, .29, .68, 1
+                        halign: 'left'
+                        text_size: self.size
                     Label:
-                        text: 'Tasks, basic calendar, lists, bills and document records.'
-                        color: .4, .47, .57, 1
-                    PrimaryButton:
-                        text: 'Continue free'
+                        text: 'R0  /  forever'
+                        bold: True
+                        font_size: sp(22)
+                        color: .07, .12, .22, 1
+                        halign: 'left'
+                        text_size: self.size
+                    Label:
+                        text: 'Core tasks, calendar, lists and personal organisation.'
+                        color: .43, .50, .60, 1
+                        halign: 'left'
+                        text_size: self.size
                         size_hint_y: None
-                        height: dp(45)
+                        height: dp(42)
+                    PrimaryButton:
+                        text: 'Continue with Free'
                         on_release: app.choose_plan('Free')
                 Card:
                     Label:
-                        text: 'PLUS  ·  R29.99 / month'
+                        text: 'PLUS  ·  MOST POPULAR'
                         bold: True
-                        color: .08, .14, .25, 1
+                        font_size: sp(12)
+                        color: .12, .29, .68, 1
+                        halign: 'left'
+                        text_size: self.size
                     Label:
-                        text: 'Ad-free, unlimited tasks and lists, advanced calendar and search.'
-                        color: .4, .47, .57, 1
-                    PrimaryButton:
-                        text: 'Select Plus'
+                        text: 'R29.99  /  month'
+                        bold: True
+                        font_size: sp(22)
+                        color: .07, .12, .22, 1
+                        halign: 'left'
+                        text_size: self.size
+                    Label:
+                        text: 'More capacity, advanced calendar tools and search.'
+                        color: .43, .50, .60, 1
+                        halign: 'left'
+                        text_size: self.size
                         size_hint_y: None
-                        height: dp(45)
+                        height: dp(42)
+                    PrimaryButton:
+                        text: 'Choose Plus'
                         on_release: app.choose_plan('Plus')
                 Card:
                     Label:
-                        text: 'PREMIUM  ·  R59.99 / month'
+                        text: 'PREMIUM'
                         bold: True
-                        color: .08, .14, .25, 1
+                        font_size: sp(12)
+                        color: .12, .29, .68, 1
+                        halign: 'left'
+                        text_size: self.size
                     Label:
-                        text: 'Everything in Plus, with shared tools, summaries and analytics.'
-                        color: .4, .47, .57, 1
-                    PrimaryButton:
-                        text: 'Select Premium'
+                        text: 'R59.99  /  month'
+                        bold: True
+                        font_size: sp(22)
+                        color: .07, .12, .22, 1
+                        halign: 'left'
+                        text_size: self.size
+                    Label:
+                        text: 'Everything in Plus, with shared tools and insights.'
+                        color: .43, .50, .60, 1
+                        halign: 'left'
+                        text_size: self.size
                         size_hint_y: None
-                        height: dp(45)
+                        height: dp(42)
+                    PrimaryButton:
+                        text: 'Choose Premium'
                         on_release: app.choose_plan('Premium')
+        SoftButton:
+            text: 'Back to sign in'
+            on_release: app.go('login')
 
 <HomeScreen>:
     name: 'home'
     BoxLayout:
         orientation: 'vertical'
         padding: dp(18)
-        spacing: dp(12)
+        spacing: dp(11)
         canvas.before:
             Color:
-                rgba: (.96, .97, .99, 1)
+                rgba: (.955, .968, .985, 1)
             Rectangle:
                 pos: self.pos
                 size: self.size
         BoxLayout:
             size_hint_y: None
-            height: dp(44)
+            height: dp(42)
             Label:
                 text: 'pendo'
                 font_size: sp(25)
@@ -196,122 +272,158 @@ KV = r"""
                 color: .07, .12, .22, 1
                 halign: 'left'
                 text_size: self.size
-            Label:
-                text: '●'
-                color: .18, .65, .42, 1
-                font_size: sp(18)
+            SoftButton:
+                text: '⚙'
                 size_hint_x: None
-                width: dp(28)
+                width: dp(48)
+                on_release: app.go('settings')
         Label:
             text: 'Good day, ' + app.username
             font_size: sp(23)
             bold: True
             color: .07, .12, .22, 1
             size_hint_y: None
-            height: dp(38)
+            height: dp(36)
             halign: 'left'
             text_size: self.size
-        Label:
-            text: 'Here is your day at a glance.'
-            color: .43, .5, .6, 1
-            size_hint_y: None
-            height: dp(25)
-            halign: 'left'
-            text_size: self.size
+        HelperText:
+            text: 'Make space for what matters today.'
         Card:
             Label:
-                text: 'YOUR SPACE'
+                text: 'YOUR PENDO SPACE'
                 font_size: sp(10)
                 bold: True
                 color: .42, .49, .59, 1
                 halign: 'left'
                 text_size: self.size
             Label:
-                text: 'Stay organised. Make today count.'
-                font_size: sp(16)
+                text: 'A little progress adds up.'
+                font_size: sp(18)
                 bold: True
                 color: .07, .12, .22, 1
                 halign: 'left'
                 text_size: self.size
+            Label:
+                text: 'Your personal organiser, all in one place.'
+                font_size: sp(12)
+                color: .43, .50, .60, 1
+                halign: 'left'
+                text_size: self.size
+        Label:
+            text: 'YOUR TOOLS'
+            font_size: sp(11)
+            bold: True
+            color: .43, .50, .60, 1
+            size_hint_y: None
+            height: dp(22)
+            halign: 'left'
+            text_size: self.size
         GridLayout:
             cols: 2
-            spacing: dp(8)
+            spacing: dp(9)
             size_hint_y: None
-            height: dp(110)
+            height: dp(174)
             SoftButton:
-                text: 'Tasks & reminders'
+                text: '✓  Tasks'
                 on_release: app.go('tasks')
             SoftButton:
-                text: 'Calendar'
+                text: '▦  Calendar'
                 on_release: app.go('calendar')
             SoftButton:
-                text: 'Bills & subscriptions'
+                text: 'R  Bills'
                 on_release: app.go('bills')
             SoftButton:
-                text: 'Lists'
+                text: '☷  Lists'
                 on_release: app.go('lists')
             SoftButton:
-                text: 'Documents'
+                text: '▤  Documents'
                 on_release: app.go('documents')
             SoftButton:
-                text: 'Goals & habits'
+                text: '◎  Goals & habits'
                 on_release: app.go('goals')
+        Widget:
+            size_hint_y: 1
         SoftButton:
             text: 'Explore all sections'
-            size_hint_y: None
-            height: dp(48)
             on_release: app.go('more')
-        SoftButton:
-            text: 'Settings'
+        Label:
+            text: 'PLAN: ' + app.plan.upper()
+            color: .50, .57, .66, 1
+            font_size: sp(10)
             size_hint_y: None
-            height: dp(48)
-            on_release: app.go('settings')
+            height: dp(20)
 
 <ModuleScreen>:
     name: 'module'
     BoxLayout:
         orientation: 'vertical'
         padding: dp(18)
-        spacing: dp(12)
+        spacing: dp(10)
         canvas.before:
             Color:
-                rgba: (.96, .97, .99, 1)
+                rgba: (.955, .968, .985, 1)
             Rectangle:
                 pos: self.pos
                 size: self.size
         BoxLayout:
             size_hint_y: None
-            height: dp(45)
-            Button:
-                text: '‹'
+            height: dp(44)
+            SoftButton:
+                text: '‹  Back'
                 size_hint_x: None
-                width: dp(45)
+                width: dp(90)
                 on_release: app.go('home')
             Label:
                 text: app.module_title
-                font_size: sp(20)
+                font_size: sp(19)
                 bold: True
                 color: .07, .12, .22, 1
                 halign: 'left'
                 text_size: self.size
-        TextInput:
-            id: module_entry
-            hint_text: app.module_hint
-            multiline: False
-            size_hint_y: None
-            height: dp(50)
-        PrimaryButton:
-            text: 'Add'
-            size_hint_y: None
-            height: dp(46)
-            on_release: app.add_module_item(module_entry.text)
+        Card:
+            Label:
+                text: 'ADD NEW'
+                color: .43, .50, .60, 1
+                font_size: sp(10)
+                bold: True
+                halign: 'left'
+                text_size: self.size
+            TextInput:
+                id: module_entry
+                hint_text: app.module_hint
+                multiline: False
+                size_hint_y: None
+                height: dp(48)
+                padding: [dp(12), dp(12)]
+                background_normal: ''
+                background_active: ''
+                background_color: (.95, .97, .99, 1)
+                foreground_color: (.10, .16, .25, 1)
+                cursor_color: (.12, .29, .68, 1)
+                on_text_validate: app.add_module_item(self.text)
+            PrimaryButton:
+                text: '＋  Add to ' + app.module_title
+                on_release: app.add_module_item(module_entry.text)
         Label:
             id: sync_status
             text: app.sync_status
             color: .42, .49, .59, 1
+            font_size: sp(11)
             size_hint_y: None
-            height: dp(25)
+            height: dp(24)
+            halign: 'left'
+            text_size: self.size
+        Label:
+            text: 'YOUR ITEMS'
+            color: .43, .50, .60, 1
+            font_size: sp(10)
+            bold: True
+            size_hint_y: None
+            height: dp(20)
+            halign: 'left'
+            text_size: self.size
         ScrollView:
+            do_scroll_x: False
             GridLayout:
                 id: module_items
                 cols: 1
@@ -320,8 +432,6 @@ KV = r"""
                 height: self.minimum_height
         SoftButton:
             text: 'More sections'
-            size_hint_y: None
-            height: dp(44)
             on_release: app.go('more')
 
 <MoreScreen>:
@@ -329,41 +439,46 @@ KV = r"""
     BoxLayout:
         orientation: 'vertical'
         padding: dp(18)
-        spacing: dp(12)
+        spacing: dp(10)
         canvas.before:
             Color:
-                rgba: (.96, .97, .99, 1)
+                rgba: (.955, .968, .985, 1)
             Rectangle:
                 pos: self.pos
                 size: self.size
-        Label:
+        ScreenTitle:
             text: 'Explore Pendo'
-            font_size: sp(22)
-            bold: True
-            color: .07, .12, .22, 1
-            size_hint_y: None
-            height: dp(45)
+        HelperText:
+            text: 'Everything you need, neatly organised.'
         SoftButton:
-            text: 'Lists'
-            on_release: app.go('lists')
+            text: '✓  Tasks & reminders'
+            on_release: app.go('tasks')
         SoftButton:
-            text: 'Documents'
-            on_release: app.go('documents')
+            text: '▦  Calendar'
+            on_release: app.go('calendar')
         SoftButton:
-            text: 'Bills & subscriptions'
+            text: 'R  Bills & subscriptions'
             on_release: app.go('bills')
         SoftButton:
-            text: 'Goals & habits'
+            text: '☷  Lists'
+            on_release: app.go('lists')
+        SoftButton:
+            text: '▤  Documents'
+            on_release: app.go('documents')
+        SoftButton:
+            text: '◎  Goals & habits'
             on_release: app.go('goals')
         SoftButton:
             text: 'Upgrade plan'
             on_release: app.go('plans')
         SoftButton:
-            text: 'Settings'
+            text: 'Settings & account'
             on_release: app.go('settings')
         SoftButton:
             text: 'Owner dashboard (demo)'
             on_release: app.go('admin')
+        Widget:
+            size_hint_y: 1
         SoftButton:
             text: 'Home'
             on_release: app.go('home')
@@ -376,27 +491,42 @@ KV = r"""
         spacing: dp(12)
         canvas.before:
             Color:
-                rgba: (.96, .97, .99, 1)
+                rgba: (.955, .968, .985, 1)
             Rectangle:
                 pos: self.pos
                 size: self.size
-        Label:
+        ScreenTitle:
             text: 'Settings & account'
-            font_size: sp(22)
-            bold: True
-            color: .07, .12, .22, 1
-            size_hint_y: None
-            height: dp(45)
+        HelperText:
+            text: 'Manage your Pendo account and plan.'
         Card:
             Label:
-                text: app.username + '\\nPlan: ' + app.plan
-                color: .2, .27, .38, 1
+                text: 'ACCOUNT'
+                color: .43, .50, .60, 1
+                font_size: sp(10)
+                bold: True
+                halign: 'left'
+                text_size: self.size
+            Label:
+                text: app.username
+                color: .07, .12, .22, 1
+                font_size: sp(18)
+                bold: True
+                halign: 'left'
+                text_size: self.size
+            Label:
+                text: 'Current plan: ' + app.plan
+                color: .43, .50, .60, 1
+                halign: 'left'
+                text_size: self.size
         SoftButton:
-            text: 'Manage plan'
+            text: 'Manage subscription / plan'
             on_release: app.go('plans')
         SoftButton:
             text: 'Sign out'
             on_release: app.sign_out()
+        Widget:
+            size_hint_y: 1
         SoftButton:
             text: 'Back home'
             on_release: app.go('home')
@@ -405,20 +535,31 @@ KV = r"""
     name: 'admin'
     BoxLayout:
         orientation: 'vertical'
-        padding: dp(15)
-        spacing: dp(10)
-        Label:
-            text: 'Owner dashboard — demo'
-            font_size: sp(22)
-            bold: True
-            color: .07, .12, .22, 1
-            size_hint_y: None
-            height: dp(45)
-        Label:
-            text: 'Analytics and revenue figures are demo data, not live business metrics.'
-            color: .65, .35, .1, 1
+        padding: dp(18)
+        spacing: dp(12)
+        canvas.before:
+            Color:
+                rgba: (.955, .968, .985, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        ScreenTitle:
+            text: 'Owner dashboard'
+        Card:
+            Label:
+                text: 'DEMO PREVIEW'
+                color: .70, .40, .12, 1
+                bold: True
+                font_size: sp(10)
+                halign: 'left'
+                text_size: self.size
+            Label:
+                text: 'Analytics and revenue figures are not connected yet.'
+                color: .25, .31, .41, 1
+                halign: 'left'
+                text_size: self.size
         SoftButton:
-            text: 'Back'
+            text: 'Back to sections'
             on_release: app.go('more')
 """
 
@@ -650,14 +791,25 @@ class PendoApp(App):
 
         for item in items:
             row = Button(
-                text=str(item),
+                text='   ' + str(item),
                 size_hint_y=None,
-                height=dp(53),
+                height=dp(58),
                 background_normal='',
-                background_color=(1, 1, 1, 1),
+                background_down='',
+                background_color=(0, 0, 0, 0),
                 color=(.12, .19, .3, 1),
-                halign='left'
+                halign='left',
+                valign='middle'
             )
+            row.text_size = (dp(290), None)
+            with row.canvas.before:
+                from kivy.graphics import Color, RoundedRectangle
+                Color(1, 1, 1, 1)
+                row._card_bg = RoundedRectangle(pos=row.pos, size=row.size, radius=[dp(14)])
+            def update_row_bg(instance, _value):
+                instance._card_bg.pos = instance.pos
+                instance._card_bg.size = instance.size
+            row.bind(pos=update_row_bg, size=update_row_bg)
             layout.add_widget(row)
 
     def add_module_item(self, value):
