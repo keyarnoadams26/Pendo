@@ -19,6 +19,8 @@ jobs:
           python-version: "3.11"
       - name: Check Python syntax
         run: python -m compileall -q .
+      - name: Run backend tests
+        run: python -m unittest discover -s tests -v
 
   build:
     needs: validate
