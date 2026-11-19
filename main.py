@@ -1,7 +1,7 @@
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
-from kivy.properties import StringProperty, ListProperty
+from kivy.properties import StringProperty, ListProperty, DictProperty
 from kivy.clock import Clock
 from kivy.metrics import dp
 import json
@@ -181,14 +181,18 @@ KV = r"""
                         font_size: sp(12)
                         color: .12, .29, .68, 1
                         halign: 'left'
-                        text_size: self.size
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: self.texture_size[1] + dp(6)
                     Label:
                         text: 'R0  /  forever'
                         bold: True
                         font_size: sp(22)
                         color: .07, .12, .22, 1
                         halign: 'left'
-                        text_size: self.size
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: self.texture_size[1] + dp(6)
                     Label:
                         text: 'Core tasks, calendar, lists and personal organisation.'
                         color: .43, .50, .60, 1
@@ -206,14 +210,18 @@ KV = r"""
                         font_size: sp(12)
                         color: .12, .29, .68, 1
                         halign: 'left'
-                        text_size: self.size
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: self.texture_size[1] + dp(6)
                     Label:
                         text: 'R29.99  /  month'
                         bold: True
                         font_size: sp(22)
                         color: .07, .12, .22, 1
                         halign: 'left'
-                        text_size: self.size
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: self.texture_size[1] + dp(6)
                     Label:
                         text: 'More capacity, advanced calendar tools and search.'
                         color: .43, .50, .60, 1
@@ -231,14 +239,18 @@ KV = r"""
                         font_size: sp(12)
                         color: .12, .29, .68, 1
                         halign: 'left'
-                        text_size: self.size
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: self.texture_size[1] + dp(6)
                     Label:
                         text: 'R59.99  /  month'
                         bold: True
                         font_size: sp(22)
                         color: .07, .12, .22, 1
                         halign: 'left'
-                        text_size: self.size
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: self.texture_size[1] + dp(6)
                     Label:
                         text: 'Everything in Plus, with shared tools and insights.'
                         color: .43, .50, .60, 1
@@ -298,20 +310,26 @@ KV = r"""
                 bold: True
                 color: .42, .49, .59, 1
                 halign: 'left'
-                text_size: self.size
+                text_size: self.width, None
+                size_hint_y: None
+                height: self.texture_size[1] + dp(6)
             Label:
                 text: 'A little progress adds up.'
                 font_size: sp(18)
                 bold: True
                 color: .07, .12, .22, 1
                 halign: 'left'
-                text_size: self.size
+                text_size: self.width, None
+                size_hint_y: None
+                height: self.texture_size[1] + dp(6)
             Label:
                 text: 'Your personal organiser, all in one place.'
                 font_size: sp(12)
                 color: .43, .50, .60, 1
                 halign: 'left'
-                text_size: self.size
+                text_size: self.width, None
+                size_hint_y: None
+                height: self.texture_size[1] + dp(6)
         Label:
             text: 'YOUR TOOLS'
             font_size: sp(11)
@@ -390,7 +408,9 @@ KV = r"""
                 font_size: sp(10)
                 bold: True
                 halign: 'left'
-                text_size: self.size
+                text_size: self.width, None
+                size_hint_y: None
+                height: self.texture_size[1] + dp(6)
             TextInput:
                 id: module_entry
                 hint_text: app.module_hint
@@ -509,19 +529,25 @@ KV = r"""
                 font_size: sp(10)
                 bold: True
                 halign: 'left'
-                text_size: self.size
+                text_size: self.width, None
+                size_hint_y: None
+                height: self.texture_size[1] + dp(6)
             Label:
                 text: app.username
                 color: .07, .12, .22, 1
                 font_size: sp(18)
                 bold: True
                 halign: 'left'
-                text_size: self.size
+                text_size: self.width, None
+                size_hint_y: None
+                height: self.texture_size[1] + dp(6)
             Label:
                 text: 'Current plan: ' + app.plan
                 color: .43, .50, .60, 1
                 halign: 'left'
-                text_size: self.size
+                text_size: self.width, None
+                size_hint_y: None
+                height: self.texture_size[1] + dp(6)
         SoftButton:
             text: 'Manage subscription / plan'
             on_release: app.go('plans')
@@ -555,12 +581,16 @@ KV = r"""
                 bold: True
                 font_size: sp(10)
                 halign: 'left'
-                text_size: self.size
+                text_size: self.width, None
+                size_hint_y: None
+                height: self.texture_size[1] + dp(6)
             Label:
                 text: 'Analytics and revenue figures are not connected yet.'
                 color: .25, .31, .41, 1
                 halign: 'left'
-                text_size: self.size
+                text_size: self.width, None
+                size_hint_y: None
+                height: self.texture_size[1] + dp(6)
         SoftButton:
             text: 'Back to sections'
             on_release: app.go('more')
@@ -601,7 +631,7 @@ class PendoApp(App):
     module_title = StringProperty('Tasks')
     module_hint = StringProperty('Add something…')
     sync_status = StringProperty('')
-    records = ListProperty([])
+    records = DictProperty({})
     cloud_records = ListProperty([])
     cloud_module = StringProperty('')
     module_key = 'tasks'
@@ -755,7 +785,7 @@ class PendoApp(App):
                     lambda _dt: self._auth_success(user, profile), 0
                 )
             else:
-                result = self.backend.sign_up(email, password)
+                result = self.backend.sign_up(email, password) or {}
                 if not result.get('access_token'):
                     Clock.schedule_once(
                         lambda _dt: self.notice(
@@ -838,16 +868,16 @@ class PendoApp(App):
         layout = self.root.get_screen('module').ids.module_items
         layout.clear_widgets()
 
-        items = list(self.DEMO_ITEMS.get(self.module_key, []))
-        local_items = []
+        items = []
         cloud_items = []
         if self.backend.configured and self.backend.user:
             if self.cloud_module == self.module_key:
                 cloud_items = list(self.cloud_records)
         else:
+            items = list(self.DEMO_ITEMS.get(self.module_key, []))
             stored = self.records.get(self.module_key, [])
-            local_items = stored if isinstance(stored, list) else []
-        items.extend(local_items)
+            if isinstance(stored, list):
+                items.extend(str(v) for v in stored)
 
         def add_row(label, callback=None):
             row = Button(
@@ -856,7 +886,7 @@ class PendoApp(App):
                 background_color=(0, 0, 0, 0), color=(.12, .19, .3, 1),
                 halign='left', valign='middle'
             )
-            row.text_size = (dp(290), None)
+            row.bind(width=lambda inst, w: setattr(inst, 'text_size', (max(w - dp(24), 0), None)))
             with row.canvas.before:
                 from kivy.graphics import Color, RoundedRectangle
                 Color(1, 1, 1, 1)
@@ -1022,6 +1052,11 @@ class PendoApp(App):
                 pass
         self.cloud_records = []
         self.cloud_module = ''
+        self.username = 'there'
+        self.plan = 'Free'
+        login = self.root.get_screen('login')
+        login.ids.email.text = ''
+        login.ids.password.text = ''
         self.root.current = 'login'
         self.notice('Signed out.')
 
