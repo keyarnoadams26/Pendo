@@ -17,19 +17,36 @@ KV = r"""
 
 <PrimaryButton@Button>:
     background_normal: ''
-    background_color: (0.20, 0.40, 0.94, 1) if self.state == 'normal' else (0.15, 0.33, 0.82, 1)
+    background_color: (0.12, 0.29, 0.68, 1) if self.state == 'normal' else (0.09, 0.23, 0.56, 1)
     color: 1, 1, 1, 1
     bold: True
+    font_size: sp(14)
+    canvas.before:
+        Color:
+            rgba: (0.12, 0.29, 0.68, 1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(12)]
 
 <SoftButton@Button>:
     background_normal: ''
-    background_color: .92, .95, 1, 1
+    background_color: 0, 0, 0, 0
     color: .12, .20, .34, 1
+    bold: True
+    font_size: sp(13)
+    canvas.before:
+        Color:
+            rgba: (.94, .96, .99, 1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(12)]
 
 <Card@BoxLayout>:
     orientation: 'vertical'
-    padding: dp(14)
-    spacing: dp(8)
+    padding: dp(16)
+    spacing: dp(10)
     size_hint_y: None
     height: self.minimum_height
     canvas.before:
@@ -38,14 +55,20 @@ KV = r"""
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: [dp(14)]
+            radius: [dp(18)]
 
 <LoginScreen>:
     name: 'login'
     BoxLayout:
         orientation: 'vertical'
-        padding: dp(24)
-        spacing: dp(12)
+        padding: dp(26)
+        spacing: dp(14)
+        canvas.before:
+            Color:
+                rgba: (.96, .97, .99, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
         Label:
             text: 'pendo'
             font_size: sp(32)
@@ -90,8 +113,14 @@ KV = r"""
     name: 'plans'
     BoxLayout:
         orientation: 'vertical'
-        padding: dp(18)
-        spacing: dp(10)
+        padding: dp(20)
+        spacing: dp(12)
+        canvas.before:
+            Color:
+                rgba: (.96, .97, .99, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
         Label:
             text: 'Choose your Pendo'
             font_size: sp(23)
@@ -149,27 +178,61 @@ KV = r"""
     name: 'home'
     BoxLayout:
         orientation: 'vertical'
-        padding: dp(15)
-        spacing: dp(10)
-        Label:
-            text: 'pendo'
-            font_size: sp(25)
-            bold: True
-            color: .07, .12, .22, 1
+        padding: dp(18)
+        spacing: dp(12)
+        canvas.before:
+            Color:
+                rgba: (.96, .97, .99, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        BoxLayout:
             size_hint_y: None
-            height: dp(42)
+            height: dp(44)
+            Label:
+                text: 'pendo'
+                font_size: sp(25)
+                bold: True
+                color: .07, .12, .22, 1
+                halign: 'left'
+                text_size: self.size
+            Label:
+                text: '●'
+                color: .18, .65, .42, 1
+                font_size: sp(18)
+                size_hint_x: None
+                width: dp(28)
         Label:
             text: 'Good day, ' + app.username
-            font_size: sp(22)
+            font_size: sp(23)
             bold: True
             color: .07, .12, .22, 1
             size_hint_y: None
             height: dp(38)
+            halign: 'left'
+            text_size: self.size
         Label:
-            text: 'Your life, on track.'
+            text: 'Here is your day at a glance.'
             color: .43, .5, .6, 1
             size_hint_y: None
             height: dp(25)
+            halign: 'left'
+            text_size: self.size
+        Card:
+            Label:
+                text: 'YOUR SPACE'
+                font_size: sp(10)
+                bold: True
+                color: .42, .49, .59, 1
+                halign: 'left'
+                text_size: self.size
+            Label:
+                text: 'Stay organised. Make today count.'
+                font_size: sp(16)
+                bold: True
+                color: .07, .12, .22, 1
+                halign: 'left'
+                text_size: self.size
         GridLayout:
             cols: 2
             spacing: dp(8)
@@ -208,8 +271,14 @@ KV = r"""
     name: 'module'
     BoxLayout:
         orientation: 'vertical'
-        padding: dp(15)
-        spacing: dp(10)
+        padding: dp(18)
+        spacing: dp(12)
+        canvas.before:
+            Color:
+                rgba: (.96, .97, .99, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
         BoxLayout:
             size_hint_y: None
             height: dp(45)
@@ -259,8 +328,14 @@ KV = r"""
     name: 'more'
     BoxLayout:
         orientation: 'vertical'
-        padding: dp(15)
-        spacing: dp(9)
+        padding: dp(18)
+        spacing: dp(12)
+        canvas.before:
+            Color:
+                rgba: (.96, .97, .99, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
         Label:
             text: 'Explore Pendo'
             font_size: sp(22)
@@ -297,8 +372,14 @@ KV = r"""
     name: 'settings'
     BoxLayout:
         orientation: 'vertical'
-        padding: dp(15)
-        spacing: dp(10)
+        padding: dp(18)
+        spacing: dp(12)
+        canvas.before:
+            Color:
+                rgba: (.96, .97, .99, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
         Label:
             text: 'Settings & account'
             font_size: sp(22)
