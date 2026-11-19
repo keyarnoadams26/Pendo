@@ -142,6 +142,9 @@ KV = r"""
             SoftButton:
                 text: 'Forgot password?'
                 on_release: app.reset_password(email.text)
+            SoftButton:
+                text: 'Continue in offline demo mode'
+                on_release: app.continue_demo()
         Label:
             text: 'Securely keep your plans, tasks and essentials together.'
             color: .53, .59, .67, 1
@@ -725,6 +728,15 @@ class PendoApp(App):
         self.username = email.split('@')[0].title() or 'there'
         self.root.current = 'plans'
         self.notice('Demo mode: Supabase is not configured yet.')
+
+    def continue_demo(self):
+        """Open the app without cloud authentication; records stay on this device."""
+        self.username = 'there'
+        self.plan = 'Free'
+        self.cloud_records = []
+        self.cloud_module = ''
+        self.root.current = 'home'
+        self.notice('You are using Pendo offline demo mode. Your changes are saved on this device only; cloud sync is unavailable until sign-in is fixed.')
 
     def signup(self):
         screen = self.root.get_screen('login')
