@@ -652,22 +652,31 @@ class PendoApp(App):
         try:
             with open(self.store_path, 'r', encoding='utf-8') as file:
                 saved = json.load(file)
-            self.plan = saved.get('plan', 'Free')
+            self.plan = 'Free'
             self.username = saved.get('username', 'there')
+            stored_records = saved.get('records', {})
+            self.records = stored_records if isinstance(stored_records, dict) else {}
         except (OSError, ValueError, TypeError):
-            pass
+            self.records = {}
 
     def persist_demo(self):
         try:
             with open(self.store_path, 'w', encoding='utf-8') as file:
-                json.dump({'plan': self.plan, 'username': self.username}, file)
-        except OSError:
+                json.dump({
+                    'plan': 'Free',
+                    'username': self.username,
+                    'records': dict(self.records)
+                }, file)
+        except (OSError, TypeError):
             pass
 
     def login(self, email, password):
         email = email.strip()
         if not email or not password:
             self.notice('Enter an email and password to continue.')
+            return
+        if '@' not in email or '.' not in email.rsplit('@', 1)[-1]:
+            self.notice('Enter a valid email address.')
             return
 
         if self.backend.configured:
@@ -690,6 +699,12 @@ class PendoApp(App):
 
         if not email or not password:
             self.notice('Enter an email and password first.')
+            return
+        if '@' not in email or '.' not in email.rsplit('@', 1)[-1]:
+            self.notice('Enter a valid email address.')
+            return
+        if len(password) < 8:
+            self.notice('Use a password with at least 8 characters.')
             return
         if not self.backend.configured:
             self.notice('Add your Supabase URL and anon key to backend_config.json first.')
@@ -739,18 +754,27 @@ class PendoApp(App):
         self.notice('Signed in successfully.')
 
     def choose_plan(self, plan):
-        self.plan = plan
+        if plan not in ('Free', 'Plus', 'Premium'):
+            self.notice('That plan is not available.')
+            return
+        if plan in ('Plus', 'Premium'):
+            self.notice(
+                plan + ' checkout is not available yet. Your account will stay on Free until secure payment verification is connected.'
+            )
+            return
+
+        self.plan = 'Free'
         self.persist_demo()
         if self.backend.configured and self.backend.user:
             threading.Thread(
-                target=self._save_plan_worker, args=(plan,), daemon=True
+                target=self._save_profile_name_worker, daemon=True
             ).start()
         self.go('home')
-        self.notice(plan + ' selected. Payment checkout is not connected yet.')
+        self.notice('Free plan selected.')
 
-    def _save_plan_worker(self, plan):
+    def _save_profile_name_worker(self):
         try:
-            self.backend.upsert_profile(display_name=self.username, plan=plan)
+            self.backend.upsert_profile(display_name=self.username)
         except BackendError as exc:
             message = str(exc)
             Clock.schedule_once(
@@ -787,7 +811,8 @@ class PendoApp(App):
             if self.cloud_module == self.module_key:
                 items.extend(self.cloud_records)
         else:
-            items.extend(self.records)
+            local_items = self.records.get(self.module_key, [])
+            items.extend(local_items if isinstance(local_items, list) else [])
 
         for item in items:
             row = Button(
@@ -827,7 +852,12 @@ class PendoApp(App):
                 daemon=True
             ).start()
         else:
-            self.records.append(value)
+            local_items = dict(self.records)
+            module_items = list(local_items.get(self.module_key, []))
+            module_items.append(value)
+            local_items[self.module_key] = module_items
+            self.records = local_items
+            self.persist_demo()
             self.refresh_module()
             self.root.get_screen('module').ids.module_entry.text = ''
             self.sync_status = 'Saved on this device in demo mode.'
