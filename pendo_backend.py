@@ -7,6 +7,7 @@ import urllib.request
 import urllib.parse
 import socket
 import ssl
+import certifi
 
 
 class BackendError(Exception):
@@ -47,7 +48,8 @@ class PendoBackend:
             headers.update(extra_headers)
         req = urllib.request.Request(self.url + path, data=data, headers=headers, method=method)
         try:
-            with urllib.request.urlopen(req, timeout=15) as response:
+            ssl_context = ssl.create_default_context(cafile=certifi.where())
+            with urllib.request.urlopen(req, timeout=15, context=ssl_context) as response:
                 raw = response.read().decode("utf-8")
                 return json.loads(raw) if raw else None
         except urllib.error.HTTPError as exc:
