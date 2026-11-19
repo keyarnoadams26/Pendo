@@ -967,6 +967,26 @@ class PendoApp(App):
         threading.Thread(target=self._record_change_worker, args=('update', kind, record_id, value), daemon=True).start()
 
     def _delete_cloud_record(self, record_id):
+        from kivy.uix.popup import Popup
+        from kivy.uix.boxlayout import BoxLayout
+        from kivy.uix.label import Label
+        from kivy.uix.button import Button
+        from kivy.metrics import dp
+
+        panel = BoxLayout(orientation='vertical', spacing=dp(10), padding=dp(12))
+        panel.add_widget(Label(text='This will permanently delete this record from your account.'))
+        actions = BoxLayout(size_hint_y=None, height=dp(44), spacing=dp(8))
+        cancel = Button(text='Cancel')
+        confirm = Button(text='Delete record')
+        actions.add_widget(cancel)
+        actions.add_widget(confirm)
+        panel.add_widget(actions)
+        popup = Popup(title='Confirm deletion', content=panel, size_hint=(.9, .3))
+        cancel.bind(on_release=popup.dismiss)
+        confirm.bind(on_release=lambda *_: (popup.dismiss(), self._run_delete_record(record_id)))
+        popup.open()
+
+    def _run_delete_record(self, record_id):
         kind = self.module_key
         self.sync_status = 'Deleting cloud record…'
         threading.Thread(target=self._record_change_worker, args=('delete', kind, record_id, ''), daemon=True).start()
