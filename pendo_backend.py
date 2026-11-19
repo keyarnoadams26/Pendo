@@ -69,6 +69,18 @@ class PendoBackend:
             self._set_session(result)
         return result
 
+    def reset_password(self, email):
+        redirect_url = ""
+        try:
+            with open(self.config_path, "r", encoding="utf-8") as f:
+                redirect_url = str(json.load(f).get("auth_redirect_url", "")).strip()
+        except (OSError, ValueError, TypeError):
+            pass
+        path = "/auth/v1/recover"
+        if redirect_url:
+            path += "?redirect_to=" + urllib.parse.quote(redirect_url, safe="")
+        return self._request(path, "POST", {"email": email})
+
     def _set_session(self, result):
         self.access_token = result.get("access_token")
         self.refresh_token = result.get("refresh_token")
