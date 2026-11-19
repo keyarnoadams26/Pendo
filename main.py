@@ -980,28 +980,97 @@ class PendoApp(App):
         if self.module_key == kind and self.root.current == 'module':
             self.refresh_module()
 
-    def show_record_actions(self, record):
-        from kivy.uix.popup import Popup
+    def _dialog_panel(self, title):
         from kivy.uix.boxlayout import BoxLayout
-        from kivy.uix.textinput import TextInput
+        from kivy.uix.label import Label
+        from kivy.metrics import dp
+        from kivy.graphics import Color, RoundedRectangle
+
+        panel = BoxLayout(
+            orientation='vertical', spacing=dp(12),
+            padding=[dp(18), dp(18), dp(18), dp(16)]
+        )
+        with panel.canvas.before:
+            Color(1, 1, 1, 1)
+            panel._dialog_bg = RoundedRectangle(
+                pos=panel.pos, size=panel.size, radius=[dp(20)]
+            )
+        def update_bg(instance, _value):
+            panel._dialog_bg.pos = instance.pos
+            panel._dialog_bg.size = instance.size
+        panel.bind(pos=update_bg, size=update_bg)
+        heading = Label(
+            text=title, color=(.07, .12, .22, 1),
+            bold=True, font_size='18sp', size_hint_y=None,
+            height=dp(30), halign='left', valign='middle'
+        )
+        heading.bind(size=lambda inst, size: setattr(inst, 'text_size', size))
+        panel.add_widget(heading)
+        return panel
+
+    def _dialog_button(self, text, primary=False):
         from kivy.uix.button import Button
+        from kivy.metrics import dp
+        from kivy.graphics import Color, RoundedRectangle
+
+        button = Button(
+            text=text, size_hint_y=None, height=dp(46),
+            background_normal='', background_down='',
+            background_color=(0, 0, 0, 0),
+            color=(1, 1, 1, 1) if primary else (.10, .18, .31, 1),
+            bold=True, font_size='13sp'
+        )
+        with button.canvas.before:
+            button._normal_color = Color(
+                (.12, .29, .68, 1) if primary else (.92, .95, .98, 1)
+            )
+            button._shape = RoundedRectangle(
+                pos=button.pos, size=button.size, radius=[dp(13)]
+            )
+        def update_button(instance, _value):
+            button._shape.pos = instance.pos
+            button._shape.size = instance.size
+        button.bind(pos=update_button, size=update_button)
+        return button
+
+    def _open_dialog(self, panel, size_hint=(.88, .38), auto_dismiss=True):
+        from kivy.uix.popup import Popup
+        popup = Popup(
+            title='', content=panel, size_hint=size_hint,
+            auto_dismiss=auto_dismiss, background='',
+            background_color=(.035, .065, .11, .48),
+            separator_height=0
+        )
+        popup.open()
+        return popup
+
+    def show_record_actions(self, record):
+        from kivy.uix.textinput import TextInput
+        from kivy.uix.boxlayout import BoxLayout
         from kivy.metrics import dp
 
         content = record.get('content') or {}
         current_text = content.get('text', '') if isinstance(content, dict) else str(content)
-        panel = BoxLayout(orientation='vertical', spacing=dp(10), padding=dp(12))
-        editor = TextInput(text=str(current_text), multiline=False, size_hint_y=None, height=dp(48))
+        panel = self._dialog_panel('Edit item')
+        editor = TextInput(
+            text=str(current_text), multiline=False,
+            size_hint_y=None, height=dp(50),
+            padding=[dp(13), dp(13)],
+            background_normal='', background_active='',
+            background_color=(.95, .97, .99, 1),
+            foreground_color=(.10, .16, .25, 1),
+            cursor_color=(.12, .29, .68, 1)
+        )
         panel.add_widget(editor)
-        actions = BoxLayout(size_hint_y=None, height=dp(46), spacing=dp(8))
-        save = Button(text='Save changes')
-        delete = Button(text='Delete')
+        actions = BoxLayout(size_hint_y=None, height=dp(46), spacing=dp(9))
+        save = self._dialog_button('Save changes', primary=True)
+        delete = self._dialog_button('Delete')
         actions.add_widget(save)
         actions.add_widget(delete)
         panel.add_widget(actions)
-        popup = Popup(title='Edit record', content=panel, size_hint=(.9, .32))
+        popup = self._open_dialog(panel, (.9, .34))
         save.bind(on_release=lambda *_: (popup.dismiss(), self._update_cloud_record(record.get('id'), editor.text)))
         delete.bind(on_release=lambda *_: (popup.dismiss(), self._delete_cloud_record(record.get('id'))))
-        popup.open()
 
     def _update_cloud_record(self, record_id, value):
         value = (value or '').strip()
@@ -1013,24 +1082,27 @@ class PendoApp(App):
         threading.Thread(target=self._record_change_worker, args=('update', kind, record_id, value), daemon=True).start()
 
     def _delete_cloud_record(self, record_id):
-        from kivy.uix.popup import Popup
-        from kivy.uix.boxlayout import BoxLayout
         from kivy.uix.label import Label
-        from kivy.uix.button import Button
+        from kivy.uix.boxlayout import BoxLayout
         from kivy.metrics import dp
 
-        panel = BoxLayout(orientation='vertical', spacing=dp(10), padding=dp(12))
-        panel.add_widget(Label(text='This will permanently delete this record from your account.'))
-        actions = BoxLayout(size_hint_y=None, height=dp(44), spacing=dp(8))
-        cancel = Button(text='Cancel')
-        confirm = Button(text='Delete record')
+        panel = self._dialog_panel('Delete this item?')
+        message = Label(
+            text='This will permanently remove the item from your Pendo account.',
+            color=(.39, .46, .56, 1), font_size='13sp',
+            halign='left', valign='middle', size_hint_y=None, height=dp(54)
+        )
+        message.bind(size=lambda inst, size: setattr(inst, 'text_size', size))
+        panel.add_widget(message)
+        actions = BoxLayout(size_hint_y=None, height=dp(46), spacing=dp(9))
+        cancel = self._dialog_button('Cancel')
+        confirm = self._dialog_button('Delete item', primary=True)
         actions.add_widget(cancel)
         actions.add_widget(confirm)
         panel.add_widget(actions)
-        popup = Popup(title='Confirm deletion', content=panel, size_hint=(.9, .3))
+        popup = self._open_dialog(panel, (.9, .34))
         cancel.bind(on_release=popup.dismiss)
         confirm.bind(on_release=lambda *_: (popup.dismiss(), self._run_delete_record(record_id)))
-        popup.open()
 
     def _run_delete_record(self, record_id):
         kind = self.module_key
@@ -1073,24 +1145,21 @@ class PendoApp(App):
         self.notice('Signed out.')
 
     def show_progress(self, message):
-        from kivy.uix.popup import Popup
         from kivy.uix.label import Label
-        from kivy.uix.boxlayout import BoxLayout
         from kivy.metrics import dp
 
         self.dismiss_progress()
-        panel = BoxLayout(orientation='vertical', padding=dp(16), spacing=dp(8))
+        panel = self._dialog_panel('Please wait')
         label = Label(
-            text=str(message), halign='center', valign='middle',
-            text_size=(dp(260), None), size_hint_y=None
+            text=str(message), color=(.39, .46, .56, 1),
+            font_size='13sp', halign='left', valign='middle',
+            size_hint_y=None, height=dp(48)
         )
-        label.bind(texture_size=lambda instance, size: setattr(instance, 'height', max(dp(44), size[1])))
+        label.bind(size=lambda inst, size: setattr(inst, 'text_size', size))
         panel.add_widget(label)
-        self._progress_popup = Popup(
-            title='Please wait', content=panel, size_hint=(.86, .28),
-            auto_dismiss=False
+        self._progress_popup = self._open_dialog(
+            panel, (.86, .28), auto_dismiss=False
         )
-        self._progress_popup.open()
 
     def dismiss_progress(self):
         popup = getattr(self, '_progress_popup', None)
@@ -1099,27 +1168,30 @@ class PendoApp(App):
             self._progress_popup = None
 
     def notice(self, message):
-        from kivy.uix.popup import Popup
         from kivy.uix.label import Label
-        from kivy.uix.boxlayout import BoxLayout
-        from kivy.uix.scrollview import ScrollView
         from kivy.metrics import dp
 
         self.dismiss_progress()
-        panel = BoxLayout(orientation='vertical', padding=dp(12))
-        scroll = ScrollView(do_scroll_x=False, do_scroll_y=True)
+        panel = self._dialog_panel('Pendo')
         label = Label(
-            text=str(message), size_hint_y=None,
-            halign='left', valign='middle',
-            text_size=(dp(270), None)
+            text=str(message), color=(.34, .42, .53, 1),
+            font_size='13sp', halign='left', valign='middle',
+            size_hint_y=None, height=dp(76)
         )
-        label.bind(texture_size=lambda instance, size: setattr(instance, 'height', max(dp(48), size[1])))
-        scroll.add_widget(label)
-        panel.add_widget(scroll)
-        Popup(
-            title='Pendo', content=panel, size_hint=(.88, .42),
-            auto_dismiss=True
-        ).open()
+        label.bind(
+            width=lambda inst, width: setattr(inst, 'text_size', (width, None)),
+            texture_size=lambda inst, size: setattr(
+                inst, 'height', min(max(size[1] + dp(12), dp(52)), dp(150))
+            )
+        )
+        panel.add_widget(label)
+        close = self._dialog_button('Got it', primary=True)
+        panel.add_widget(close)
+        popup = self._open_dialog(panel, (.88, None))
+        popup.size_hint_y = None
+        popup.height = dp(190)
+        close.bind(on_release=popup.dismiss)
+
 
 
 if __name__ == '__main__':
