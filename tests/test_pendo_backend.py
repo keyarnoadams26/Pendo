@@ -2,6 +2,7 @@ import json
 import os
 import tempfile
 import unittest
+import urllib.parse
 from unittest.mock import patch
 
 from pendo_backend import BackendError, PendoBackend
@@ -38,7 +39,7 @@ class PendoBackendTests(unittest.TestCase):
         with patch.object(backend, "_request", return_value={}) as request:
             backend.sign_up("person@example.com", "correct-horse-battery")
         args, kwargs = request.call_args
-        self.assertEqual(args[0], "/auth/v1/signup?redirect_to=" + __import__("urllib.parse").parse.quote(callback, safe=""))
+        self.assertEqual(args[0], "/auth/v1/signup?redirect_to=" + urllib.parse.quote(callback, safe=""))
         self.assertEqual(args[1], "POST")
         self.assertEqual(args[2], {"email": "person@example.com", "password": "correct-horse-battery"})
 
