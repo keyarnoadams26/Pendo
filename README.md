@@ -25,8 +25,9 @@ The app uses `pendo_backend.py`, a small Supabase REST/Auth client.
 1. Create a Supabase project.
 2. In **Project Settings → API**, copy the Project URL and public anon/publishable key.
 3. Put them in `backend_config.json` as `supabase_url` and `supabase_anon_key`.
-4. Run `supabase_schema.sql` in the Supabase SQL Editor.
-5. Configure the Supabase Auth email-confirmation and redirect URL settings for the app's actual authentication flow. Do not use a localhost redirect for an installed Android app.
+4. Set `auth_redirect_url` in `backend_config.json` to the exact callback URL used by your app's authentication flow. The app now sends this as Supabase's `redirect_to` for both account confirmation and password recovery. An empty value leaves Supabase to use its configured Site URL.
+5. Add that exact callback URL to **Authentication → URL Configuration → Redirect URLs** in Supabase, and set the project's **Site URL** to a real hosted page rather than `http://localhost:3000`. A native Android deep link also needs a matching Android intent filter before it can reopen the installed app; do not use a custom scheme until that native callback is configured.
+6. Run `supabase_schema.sql` in the Supabase SQL Editor.
 
 Only the public anon key belongs in the mobile app. Never include a Supabase service-role key in the repository or APK.
 
