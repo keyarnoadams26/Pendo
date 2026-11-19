@@ -26,6 +26,12 @@ KV = r"""
     background_color: .92, .95, 1, 1
     color: .12, .20, .34, 1
 
+<CardLabel@Label>:
+    size_hint_y: None
+    text_size: self.width, None
+    height: self.texture_size[1] + dp(6)
+    halign: 'center'
+
 <Card@BoxLayout>:
     orientation: 'vertical'
     padding: dp(14)
@@ -106,11 +112,11 @@ KV = r"""
                 size_hint_y: None
                 height: self.minimum_height
                 Card:
-                    Label:
+                    CardLabel:
                         text: 'FREE  ·  R0'
                         bold: True
                         color: .08, .14, .25, 1
-                    Label:
+                    CardLabel:
                         text: 'Tasks, basic calendar, lists, bills and document records.'
                         color: .4, .47, .57, 1
                     PrimaryButton:
@@ -119,11 +125,11 @@ KV = r"""
                         height: dp(45)
                         on_release: app.choose_plan('Free')
                 Card:
-                    Label:
+                    CardLabel:
                         text: 'PLUS  ·  R29.99 / month'
                         bold: True
                         color: .08, .14, .25, 1
-                    Label:
+                    CardLabel:
                         text: 'Ad-free, unlimited tasks and lists, advanced calendar and search.'
                         color: .4, .47, .57, 1
                     PrimaryButton:
@@ -132,11 +138,11 @@ KV = r"""
                         height: dp(45)
                         on_release: app.choose_plan('Plus')
                 Card:
-                    Label:
+                    CardLabel:
                         text: 'PREMIUM  ·  R59.99 / month'
                         bold: True
                         color: .08, .14, .25, 1
-                    Label:
+                    CardLabel:
                         text: 'Everything in Plus, with shared tools, summaries and analytics.'
                         color: .4, .47, .57, 1
                     PrimaryButton:
@@ -174,7 +180,7 @@ KV = r"""
             cols: 2
             spacing: dp(8)
             size_hint_y: None
-            height: dp(110)
+            height: dp(170)
             SoftButton:
                 text: 'Tasks & reminders'
                 on_release: app.go('tasks')
@@ -307,8 +313,8 @@ KV = r"""
             size_hint_y: None
             height: dp(45)
         Card:
-            Label:
-                text: app.username + '\\nPlan: ' + app.plan
+            CardLabel:
+                text: app.username + '\nPlan: ' + app.plan
                 color: .2, .27, .38, 1
         SoftButton:
             text: 'Manage plan'
@@ -376,7 +382,6 @@ class PendoApp(App):
     module_title = StringProperty('Tasks')
     module_hint = StringProperty('Add something…')
     sync_status = StringProperty('')
-    records = ListProperty([])
     cloud_records = ListProperty([])
     cloud_module = StringProperty('')
     module_key = 'tasks'
@@ -419,6 +424,8 @@ class PendoApp(App):
             manager.add_widget(screen)
 
         self.store_path = os.path.join(self.user_data_dir, 'pendo_demo.json')
+        # Demo-mode entries, kept separately per module (key = module name).
+        self.records = {}
         self.backend = PendoBackend(
             os.path.join(os.path.dirname(__file__), 'backend_config.json')
         )
@@ -432,13 +439,27 @@ class PendoApp(App):
                 saved = json.load(file)
             self.plan = saved.get('plan', 'Free')
             self.username = saved.get('username', 'there')
-        except (OSError, ValueError, TypeError):
+            records = saved.get('records', {})
+            if isinstance(records, dict):
+                self.records = {
+                    key: [str(v) for v in values]
+                    for key, values in records.items()
+                    if key in self.MODULE_NAMES and isinstance(values, list)
+                }
+        except (OSError, ValueError, TypeError, AttributeError):
             pass
 
     def persist_demo(self):
         try:
             with open(self.store_path, 'w', encoding='utf-8') as file:
-                json.dump({'plan': self.plan, 'username': self.username}, file)
+                json.dump(
+                    {
+                        'plan': self.plan,
+                        'username': self.username,
+                        'records': self.records,
+                    },
+                    file,
+                )
         except OSError:
             pass
 
@@ -504,6 +525,11 @@ class PendoApp(App):
         except BackendError as exc:
             message = str(exc)
             Clock.schedule_once(lambda _dt: self.notice(message), 0)
+        except Exception:
+            # Never let the worker thread die silently with the UI stuck on "Signing in…".
+            Clock.schedule_once(
+                lambda _dt: self.notice('Something went wrong. Please try again.'), 0
+            )
 
     def _auth_success(self, user, profile):
         email = (user or {}).get('email', '')
@@ -519,21 +545,11 @@ class PendoApp(App):
     def choose_plan(self, plan):
         self.plan = plan
         self.persist_demo()
-        if self.backend.configured and self.backend.user:
-            threading.Thread(
-                target=self._save_plan_worker, args=(plan,), daemon=True
-            ).start()
+        # Plan changes are deliberately not sent to Supabase: the database trigger
+        # rejects client-side plan changes (only billing code may change them), so
+        # selecting a plan stays a local demo until payments are connected.
         self.go('home')
-        self.notice(plan + ' selected. Payment checkout is not connected yet.')
-
-    def _save_plan_worker(self, plan):
-        try:
-            self.backend.upsert_profile(display_name=self.username, plan=plan)
-        except BackendError as exc:
-            message = str(exc)
-            Clock.schedule_once(
-                lambda _dt: self.notice('Could not save profile: ' + message), 0
-            )
+        self.notice(plan + ' selected (demo). Payment checkout is not connected yet.')
 
     def go(self, screen):
         if screen in self.MODULE_NAMES:
@@ -565,7 +581,7 @@ class PendoApp(App):
             if self.cloud_module == self.module_key:
                 items.extend(self.cloud_records)
         else:
-            items.extend(self.records)
+            items.extend(self.records.get(self.module_key, []))
 
         for item in items:
             row = Button(
@@ -594,10 +610,11 @@ class PendoApp(App):
                 daemon=True
             ).start()
         else:
-            self.records.append(value)
+            self.records.setdefault(self.module_key, []).append(value)
+            self.persist_demo()
             self.refresh_module()
             self.root.get_screen('module').ids.module_entry.text = ''
-            self.sync_status = 'Saved on this device in demo mode.'
+            self.sync_status = 'Saved on this device (demo mode).'
             self.notice('Added to ' + self.module_title)
 
     def _load_cloud_records_worker(self, kind):
@@ -657,6 +674,9 @@ class PendoApp(App):
                 pass
         self.cloud_records = []
         self.cloud_module = ''
+        login = self.root.get_screen('login')
+        login.ids.email.text = ''
+        login.ids.password.text = ''
         self.root.current = 'login'
         self.notice('Signed out.')
 
@@ -664,11 +684,9 @@ class PendoApp(App):
         from kivy.uix.popup import Popup
         from kivy.uix.label import Label
 
-        Popup(
-            title='Pendo',
-            content=Label(text=str(message)),
-            size_hint=(.84, .3)
-        ).open()
+        label = Label(text=str(message), halign='center', valign='middle')
+        label.bind(size=lambda inst, size: setattr(inst, 'text_size', size))
+        Popup(title='Pendo', content=label, size_hint=(.84, .3)).open()
 
 
 if __name__ == '__main__':

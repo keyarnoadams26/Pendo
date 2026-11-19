@@ -1,7 +1,7 @@
 """Small Supabase REST/Auth client for Pendo; uses Python stdlib only."""
 from __future__ import annotations
 import json
-import os
+import ssl
 import urllib.error
 import urllib.request
 import urllib.parse
@@ -9,6 +9,15 @@ import urllib.parse
 
 class BackendError(Exception):
     pass
+
+
+def _ssl_context():
+    """Android has no system CA bundle Python can use, so prefer certifi's."""
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        return ssl.create_default_context()
 
 
 class PendoBackend:
@@ -45,9 +54,11 @@ class PendoBackend:
             headers.update(extra_headers)
         req = urllib.request.Request(self.url + path, data=data, headers=headers, method=method)
         try:
-            with urllib.request.urlopen(req, timeout=15) as response:
+            with urllib.request.urlopen(req, timeout=15, context=_ssl_context()) as response:
                 raw = response.read().decode("utf-8")
                 return json.loads(raw) if raw else None
+        except ValueError as exc:
+            raise BackendError("Pendo's backend sent an unexpected response.") from exc
         except urllib.error.HTTPError as exc:
             try:
                 body = json.loads(exc.read().decode("utf-8"))
@@ -60,11 +71,13 @@ class PendoBackend:
 
     def sign_in(self, email, password):
         result = self._request("/auth/v1/token?grant_type=password", "POST", {"email": email, "password": password})
+        if not result:
+            raise BackendError("Sign-in failed. Please try again.")
         self._set_session(result)
         return self.user
 
     def sign_up(self, email, password):
-        result = self._request("/auth/v1/signup", "POST", {"email": email, "password": password})
+        result = self._request("/auth/v1/signup", "POST", {"email": email, "password": password}) or {}
         if result.get("access_token"):
             self._set_session(result)
         return result

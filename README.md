@@ -6,7 +6,7 @@ Mobile-first Kivy Android application prototype. Includes login/onboarding, tier
 - Authentication, cloud sync, payments, ads, and push notifications are NOT connected.
 - Tier selection is demo-only.
 - Owner dashboard figures are placeholder data.
-- Python is the mobile UI/app layer. `cpp/` contains a starter native C++ helper and is not currently compiled/linked into the Android app.
+- Python is the mobile UI/app layer. `pendo_core.cpp` (built via `CMakeLists.txt`) is a starter native C++ helper and is not currently compiled/linked into the Android app.
 - This is a development prototype, not a production-ready app.
 
 ## Android build (Linux/Ubuntu or cloud build runner)
@@ -15,7 +15,7 @@ Mobile-first Kivy Android application prototype. Includes login/onboarding, tier
 3. APK output is in `bin/`.
 
 ## GitHub
-Create a repository, upload/commit the project, then use the Android workflow in `.github/workflows/android.yml` (workflow starter) to build APK artifacts.
+Create a repository, upload/commit the project, then use the Android workflow in `.github/workflows/main.yml` (run it from the Actions tab via "Run workflow") to build APK artifacts. Re-running an old run replays the old commit, so start a fresh run after pushing a fix.
 
 ## Backend foundation (Supabase)
 
