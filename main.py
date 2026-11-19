@@ -222,7 +222,7 @@ KV = r"""
                         size_hint_y: None
                         height: dp(42)
                     PrimaryButton:
-                        text: 'Choose Plus'
+                        text: 'Plus · Coming soon'
                         on_release: app.choose_plan('Plus')
                 Card:
                     Label:
@@ -247,7 +247,7 @@ KV = r"""
                         size_hint_y: None
                         height: dp(42)
                     PrimaryButton:
-                        text: 'Choose Premium'
+                        text: 'Premium · Coming soon'
                         on_release: app.choose_plan('Premium')
         SoftButton:
             text: 'Back to sign in'
