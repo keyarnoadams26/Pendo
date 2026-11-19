@@ -18,6 +18,8 @@ class BackendError(Exception):
 
 
 class PendoBackend:
+    AUTH_CALLBACK_URL = "com.pendo.app.pendo://auth-callback"
+
     def __init__(self, config_path: str):
         self.config_path = config_path
         self.url = ""
@@ -143,7 +145,8 @@ class PendoBackend:
                 config = json.load(config_file)
             if not isinstance(config, dict):
                 return ""
-            return str(config.get("auth_redirect_url", "") or "").strip()
+            configured = str(config.get("auth_redirect_url", "") or "").strip()
+            return configured or self.AUTH_CALLBACK_URL
         except (OSError, ValueError, TypeError):
             return ""
 
@@ -167,6 +170,56 @@ class PendoBackend:
     def reset_password(self, email):
         path = self._with_redirect("/auth/v1/recover", self._auth_redirect_url())
         return self._request(path, "POST", {"email": email})
+
+    def complete_auth_callback(self, callback_url):
+        """Validate and complete a Supabase implicit-flow Android deep link."""
+        try:
+            parsed = urllib.parse.urlsplit(str(callback_url or ""))
+        except ValueError as exc:
+            raise BackendError("The sign-in link is invalid.") from exc
+        expected = urllib.parse.urlsplit(self.AUTH_CALLBACK_URL)
+        if parsed.scheme != expected.scheme or parsed.netloc != expected.netloc:
+            raise BackendError("This sign-in link is not for Pendo.")
+
+        params = urllib.parse.parse_qs(parsed.fragment)
+        for key, values in urllib.parse.parse_qs(parsed.query).items():
+            params.setdefault(key, values)
+
+        error = (params.get("error_description") or params.get("error") or [""])[0]
+        if error:
+            raise BackendError(urllib.parse.unquote(error.replace("+", " ")))
+
+        access_token = (params.get("access_token") or [""])[0]
+        refresh_token = (params.get("refresh_token") or [""])[0]
+        token_hash = (params.get("token_hash") or [""])[0]
+        auth_type = (params.get("type") or ["signup"])[0]
+
+        if token_hash:
+            result = self._request(
+                "/auth/v1/verify", "POST",
+                {"token_hash": token_hash, "type": auth_type}
+            ) or {}
+            self._set_session(result)
+        elif access_token and refresh_token:
+            self.access_token = access_token
+            self.refresh_token = refresh_token
+            self.user = self._request("/auth/v1/user", "GET")
+        else:
+            raise BackendError("The link did not contain a valid Pendo sign-in session. Request a new email and try again.")
+
+        if not self.access_token or not self.user:
+            raise BackendError("Supabase did not return a valid account session. Please sign in again.")
+        return {"type": auth_type, "user": self.user}
+
+    def update_password(self, new_password):
+        if not self.access_token:
+            raise BackendError("Your password-reset session has expired. Request a new reset email.")
+        if not isinstance(new_password, str) or len(new_password) < 8:
+            raise BackendError("Use a password with at least 8 characters.")
+        result = self._request("/auth/v1/user", "PUT", {"password": new_password})
+        if isinstance(result, dict) and result:
+            self.user = result
+        return self.user
 
     def _set_session(self, result):
         self.access_token = result.get("access_token")

@@ -29,7 +29,7 @@ class PendoBackendTests(unittest.TestCase):
         self.assertTrue(backend.configured)
 
     def test_signup_passes_encoded_redirect_url(self):
-        callback = "pendo://auth-callback?source=signup"
+        callback = PendoBackend.AUTH_CALLBACK_URL
         self.write_config(
             supabase_url="https://example.supabase.co",
             supabase_anon_key="public",
@@ -44,16 +44,16 @@ class PendoBackendTests(unittest.TestCase):
         self.assertEqual(args[1], "POST")
         self.assertEqual(args[2], {"email": "person@example.com", "password": "correct-horse-battery"})
 
-    def test_signup_without_redirect_uses_supabase_site_url(self):
+    def test_empty_redirect_config_uses_native_pendo_callback(self):
         self.write_config(supabase_url="https://example.supabase.co", supabase_anon_key="public")
         backend = PendoBackend(self.config_path)
 
         with patch.object(backend, "_request", return_value={}) as request:
             backend.sign_up("person@example.com", "correct-horse-battery")
-        self.assertEqual(request.call_args.args[0], "/auth/v1/signup")
+        self.assertEqual(request.call_args.args[0], "/auth/v1/signup?redirect_to=com.pendo.app.pendo%3A%2F%2Fauth-callback")
 
     def test_password_recovery_uses_same_redirect(self):
-        callback = "https://example.com/auth/callback"
+        callback = PendoBackend.AUTH_CALLBACK_URL
         self.write_config(
             supabase_url="https://example.supabase.co",
             supabase_anon_key="public",
@@ -65,8 +65,43 @@ class PendoBackendTests(unittest.TestCase):
             backend.reset_password("person@example.com")
         self.assertEqual(
             request.call_args.args[0],
-            "/auth/v1/recover?redirect_to=https%3A%2F%2Fexample.com%2Fauth%2Fcallback",
+            "/auth/v1/recover?redirect_to=com.pendo.app.pendo%3A%2F%2Fauth-callback",
         )
+
+    def test_auth_callback_accepts_session_fragment(self):
+        self.write_config(supabase_url="https://example.supabase.co", supabase_anon_key="public")
+        backend = PendoBackend(self.config_path)
+        callback = PendoBackend.AUTH_CALLBACK_URL + "#access_token=access&refresh_token=refresh&type=signup"
+        with patch.object(backend, "_request", return_value={"id": "user-1", "email": "person@example.com"}):
+            result = backend.complete_auth_callback(callback)
+        self.assertEqual(result["type"], "signup")
+        self.assertEqual(result["user"]["id"], "user-1")
+        self.assertEqual(backend.access_token, "access")
+        self.assertEqual(backend.refresh_token, "refresh")
+
+    def test_auth_callback_rejects_wrong_scheme_or_host(self):
+        self.write_config(supabase_url="https://example.supabase.co", supabase_anon_key="public")
+        backend = PendoBackend(self.config_path)
+        with self.assertRaises(BackendError):
+            backend.complete_auth_callback("https://example.com/#access_token=x")
+
+    def test_auth_callback_surfaces_supabase_error(self):
+        self.write_config(supabase_url="https://example.supabase.co", supabase_anon_key="public")
+        backend = PendoBackend(self.config_path)
+        callback = PendoBackend.AUTH_CALLBACK_URL + "#error=access_denied&error_description=Email+link+expired"
+        with self.assertRaisesRegex(BackendError, "Email link expired"):
+            backend.complete_auth_callback(callback)
+
+    def test_update_password_requires_session_and_minimum_length(self):
+        self.write_config(supabase_url="https://example.supabase.co", supabase_anon_key="public")
+        backend = PendoBackend(self.config_path)
+        with self.assertRaises(BackendError):
+            backend.update_password("short")
+        backend.access_token = "access"
+        with patch.object(backend, "_request", return_value={"id": "user-1"}) as request:
+            backend.update_password("a-secure-password")
+        self.assertEqual(request.call_args.args[0], "/auth/v1/user")
+        self.assertEqual(request.call_args.args[1], "PUT")
 
     def test_sign_in_stores_session(self):
         self.write_config(supabase_url="https://example.supabase.co", supabase_anon_key="public")

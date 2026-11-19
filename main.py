@@ -677,6 +677,7 @@ class PendoApp(App):
             manager.add_widget(screen)
 
         self._progress_popup = None
+        self._last_auth_intent_url = ""
         self.store_path = os.path.join(self.user_data_dir, 'pendo_demo.json')
         self.backend = PendoBackend(
             os.path.join(os.path.dirname(__file__), 'backend_config.json')
@@ -684,6 +685,113 @@ class PendoApp(App):
         self.load_demo()
         manager.current = 'login'
         return manager
+
+    def on_start(self):
+        Clock.schedule_once(lambda _dt: self._consume_android_auth_intent(), 0.5)
+
+    def on_resume(self):
+        Clock.schedule_once(lambda _dt: self._consume_android_auth_intent(), 0.2)
+        return True
+
+    def _consume_android_auth_intent(self):
+        """Read a Supabase callback URL delivered by Android."""
+        try:
+            from jnius import autoclass
+            activity = autoclass('org.kivy.android.PythonActivity').mActivity
+            intent = activity.getIntent()
+            callback_url = intent.getDataString() if intent else None
+        except Exception:
+            return
+        if not callback_url or callback_url == self._last_auth_intent_url:
+            return
+        expected_scheme = PendoBackend.AUTH_CALLBACK_URL.split('://', 1)[0] + '://'
+        if not callback_url.startswith(expected_scheme):
+            return
+        self._last_auth_intent_url = callback_url
+        threading.Thread(
+            target=self._auth_callback_worker,
+            args=(callback_url,),
+            daemon=True
+        ).start()
+
+    def _auth_callback_worker(self, callback_url):
+        try:
+            result = self.backend.complete_auth_callback(callback_url)
+            if result.get('type') == 'recovery':
+                Clock.schedule_once(lambda _dt: self.show_password_reset_dialog(), 0)
+            else:
+                profile = self.backend.get_profile()
+                Clock.schedule_once(
+                    lambda _dt: self._auth_success(result.get('user'), profile), 0
+                )
+        except BackendError as exc:
+            message = str(exc)
+            Clock.schedule_once(lambda _dt: self.notice(message), 0)
+
+    def show_password_reset_dialog(self):
+        from kivy.uix.textinput import TextInput
+        from kivy.uix.boxlayout import BoxLayout
+        from kivy.metrics import dp
+
+        panel = self._dialog_panel('Choose a new password')
+        password = TextInput(
+            hint_text='New password (8 characters minimum)',
+            password=True, multiline=False, size_hint_y=None, height=dp(48),
+            padding=[dp(13), dp(12)], background_normal='',
+            background_active='', background_color=(.95, .97, .99, 1),
+            foreground_color=(.10, .16, .25, 1)
+        )
+        confirm = TextInput(
+            hint_text='Confirm new password',
+            password=True, multiline=False, size_hint_y=None, height=dp(48),
+            padding=[dp(13), dp(12)], background_normal='',
+            background_active='', background_color=(.95, .97, .99, 1),
+            foreground_color=(.10, .16, .25, 1)
+        )
+        panel.add_widget(password)
+        panel.add_widget(confirm)
+        actions = BoxLayout(size_hint_y=None, height=dp(46), spacing=dp(9))
+        cancel = self._dialog_button('Cancel')
+        save = self._dialog_button('Update password', primary=True)
+        actions.add_widget(cancel)
+        actions.add_widget(save)
+        panel.add_widget(actions)
+        popup = self._open_dialog(panel, (.92, .48), auto_dismiss=False)
+        cancel.bind(on_release=popup.dismiss)
+        save.bind(on_release=lambda *_: self._submit_password_reset(
+            popup, password.text, confirm.text
+        ))
+
+    def _submit_password_reset(self, popup, password, confirmation):
+        if len(password) < 8:
+            self.notice('Use a password with at least 8 characters.')
+            return
+        if password != confirmation:
+            self.notice('The passwords do not match.')
+            return
+        popup.dismiss()
+        self.show_progress('Updating your password…')
+        threading.Thread(
+            target=self._password_update_worker,
+            args=(password,),
+            daemon=True
+        ).start()
+
+    def _password_update_worker(self, password):
+        try:
+            self.backend.update_password(password)
+            try:
+                self.backend.sign_out()
+            except BackendError:
+                pass
+            Clock.schedule_once(lambda _dt: self._password_update_success(), 0)
+        except BackendError as exc:
+            message = str(exc)
+            Clock.schedule_once(lambda _dt: self.notice(message), 0)
+
+    def _password_update_success(self):
+        self.root.current = 'login'
+        self.notice('Your password was updated. Sign in with your new password.')
 
     def load_demo(self):
         try:

@@ -25,8 +25,8 @@ The app uses `pendo_backend.py`, a small Supabase REST/Auth client.
 1. Create a Supabase project.
 2. In **Project Settings → API**, copy the Project URL and public anon/publishable key.
 3. Put them in `backend_config.json` as `supabase_url` and `supabase_anon_key`.
-4. Set `auth_redirect_url` in `backend_config.json` to the exact callback URL used by your app's authentication flow. The app now sends this as Supabase's `redirect_to` for both account confirmation and password recovery. An empty value leaves Supabase to use its configured Site URL.
-5. Add that exact callback URL to **Authentication → URL Configuration → Redirect URLs** in Supabase, and set the project's **Site URL** to a real hosted page rather than `http://localhost:3000`. A native Android deep link also needs a matching Android intent filter before it can reopen the installed app; do not use a custom scheme until that native callback is configured.
+4. Pendo uses the Android callback `com.pendo.app.pendo://auth-callback`. It is registered in the Android manifest and used for signup confirmation and password recovery.
+5. In **Authentication → URL Configuration**, add `com.pendo.app.pendo://auth-callback` to **Redirect URLs** and set **Site URL** to the same callback. Supabase supports custom mobile deep-link URLs for this purpose. The app handles the returned session and displays a password-update prompt for recovery links.
 6. Run `supabase_schema.sql` in the Supabase SQL Editor.
 
 Only the public anon key belongs in the mobile app. Never include a Supabase service-role key in the repository or APK.
@@ -54,7 +54,7 @@ The APK is uploaded as the `Pendo-Android-APK` workflow artifact when the build 
 This is an active prototype, not a production release. Before release, complete and test:
 
 - Secure session persistence, refresh-token handling and sign-out
-- Email confirmation and password-reset deep links for Android
+- Physical-device testing of email confirmation and password-reset deep links on Android
 - Feature-specific data models, editing, deletion, validation and search
 - Offline handling, sync conflict handling and loading/error/empty states
 - Verified payment checkout, recurring billing, webhooks and entitlement enforcement
