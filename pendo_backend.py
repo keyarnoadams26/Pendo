@@ -119,6 +119,30 @@ class PendoBackend:
         safe_type = urllib.parse.quote(record_type, safe="")
         return self._request(f"/rest/v1/app_records?record_type=eq.{safe_type}&select=id,record_type,content,created_at&order=created_at.desc")
 
+    def update_record(self, record_id, content):
+        if not self.user:
+            raise BackendError("Please sign in to update cloud data.")
+        safe_id = urllib.parse.quote(str(record_id), safe="")
+        user_id = urllib.parse.quote(str((self.user or {}).get("id", "")), safe="")
+        rows = self._request(
+            f"/rest/v1/app_records?id=eq.{safe_id}&user_id=eq.{user_id}",
+            "PATCH", {"content": content},
+            {"Prefer": "return=representation"}
+        )
+        if not rows:
+            raise BackendError("That record could not be found or is no longer available.")
+        return rows[0]
+
+    def delete_record(self, record_id):
+        if not self.user:
+            raise BackendError("Please sign in to delete cloud data.")
+        safe_id = urllib.parse.quote(str(record_id), safe="")
+        user_id = urllib.parse.quote(str((self.user or {}).get("id", "")), safe="")
+        self._request(
+            f"/rest/v1/app_records?id=eq.{safe_id}&user_id=eq.{user_id}",
+            "DELETE"
+        )
+
     def sign_out(self):
         try:
             if self.access_token:
