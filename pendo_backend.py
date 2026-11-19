@@ -5,6 +5,8 @@ import os
 import urllib.error
 import urllib.request
 import urllib.parse
+import socket
+import ssl
 
 
 class BackendError(Exception):
@@ -55,8 +57,27 @@ class PendoBackend:
             except Exception:
                 message = str(exc)
             raise BackendError(message) from exc
-        except (urllib.error.URLError, TimeoutError) as exc:
-            raise BackendError("Could not reach Pendo's backend. Check your connection and try again.") from exc
+        except urllib.error.URLError as exc:
+            reason = getattr(exc, "reason", exc)
+            if isinstance(reason, ssl.SSLError):
+                detail = "Secure connection failed (SSL certificate/TLS error)."
+            elif isinstance(reason, socket.gaierror):
+                detail = "The server address could not be found (DNS error)."
+            elif isinstance(reason, (TimeoutError, socket.timeout)):
+                detail = "The server took too long to respond (timeout)."
+            elif isinstance(reason, ConnectionRefusedError):
+                detail = "The server refused the connection."
+            elif isinstance(reason, OSError):
+                detail = "Network connection failed: " + str(reason)
+            else:
+                detail = "Network request failed: " + str(reason)
+            raise BackendError("Could not reach Pendo's backend. " + detail + " Check your internet connection and Supabase project status, then try again.") from exc
+        except (TimeoutError, socket.timeout) as exc:
+            raise BackendError("Could not reach Pendo's backend. The server took too long to respond (timeout).") from exc
+        except ssl.SSLError as exc:
+            raise BackendError("Could not reach Pendo's backend. Secure connection failed (SSL certificate/TLS error).") from exc
+        except OSError as exc:
+            raise BackendError("Could not reach Pendo's backend. Network connection failed: " + str(exc)) from exc
 
     def sign_in(self, email, password):
         result = self._request("/auth/v1/token?grant_type=password", "POST", {"email": email, "password": password})
