@@ -613,6 +613,27 @@ KV = r"""
 """
 
 
+class PendoScreenManager(ScreenManager):
+    """Screen manager with deliberate horizontal navigation gestures."""
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            touch.ud['pendo_swipe_origin'] = (touch.x, touch.y)
+        return super().on_touch_down(touch)
+
+    def on_touch_up(self, touch):
+        origin = touch.ud.get('pendo_swipe_origin')
+        handled = super().on_touch_up(touch)
+        if origin:
+            dx = touch.x - origin[0]
+            dy = touch.y - origin[1]
+            if abs(dx) >= dp(88) and abs(dx) > abs(dy) * 1.35:
+                app = App.get_running_app()
+                if app:
+                    app.handle_swipe(dx)
+        return handled
+
+
 class LoginScreen(Screen):
     pass
 
@@ -681,8 +702,8 @@ class PendoApp(App):
     }
 
     def build(self):
-        Builder.load_string(KV)
-        manager = ScreenManager()
+        Builder.load_file(os.path.join(os.path.dirname(__file__), 'pendo_ui.kv'))
+        manager = PendoScreenManager()
         for screen in (
             LoginScreen(), PlanScreen(), HomeScreen(), ModuleScreen(),
             MoreScreen(), SettingsScreen(), AdminScreen()
@@ -698,6 +719,17 @@ class PendoApp(App):
         self.load_demo()
         manager.current = 'login'
         return manager
+
+    def handle_swipe(self, dx):
+        current = self.root.current
+        if current == 'home' and dx < 0:
+            self.go('more')
+        elif current == 'more':
+            self.go('home' if dx > 0 else 'settings')
+        elif current == 'settings' and dx > 0:
+            self.go('more')
+        elif current == 'module' and dx > 0:
+            self.go('home')
 
     def on_start(self):
         Clock.schedule_once(lambda _dt: self._consume_android_auth_intent(), 0.5)

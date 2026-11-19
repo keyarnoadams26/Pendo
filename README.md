@@ -4,6 +4,8 @@ Pendo is a mobile-first personal organisation app built with Python and Kivy for
 
 ## Current app screens
 
+The current mobile UI has been redesigned around a consistent navy-and-blue visual system, card-based dashboard, persistent bottom navigation, section shortcuts and horizontal swipe navigation between primary areas. The visual layer is in `pendo_ui.kv`; the app remains a Kivy Android application.
+
 - Sign-in and account creation entry point
 - Plan selection / paywall presentation (Free, Plus, Premium)
 - Home dashboard and section shortcuts
@@ -16,7 +18,7 @@ Pendo is a mobile-first personal organisation app built with Python and Kivy for
 - Settings and account
 - Owner dashboard preview (demo only)
 
-The current module screens support adding and viewing simple text records. They are a front-end foundation, not yet full-featured task, calendar, bill, document or goal-management systems.
+The redesigned module screens currently support adding and viewing simple text records. They are still a foundation rather than complete task, calendar, bill, document or goal-management systems. The bottom navigation and horizontal swipe gestures move between Home, Explore and Account; a right-swipe from a module returns Home.
 
 ## Backend setup
 

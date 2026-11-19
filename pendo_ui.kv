@@ -1,0 +1,791 @@
+#:import dp kivy.metrics.dp
+#:import sp kivy.metrics.sp
+
+<PrimaryButton@Button>:
+    background_normal: ''
+    background_down: ''
+    background_color: 0, 0, 0, 0
+    color: 1, 1, 1, 1
+    bold: True
+    font_size: sp(14)
+    size_hint_y: None
+    height: dp(52)
+    canvas.before:
+        Color:
+            rgba: (0.12, 0.29, 0.68, 1) if self.state == 'normal' else (0.08, 0.22, 0.55, 1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(16)]
+
+<SoftButton@Button>:
+    background_normal: ''
+    background_down: ''
+    background_color: 0, 0, 0, 0
+    color: .12, .20, .34, 1
+    bold: True
+    font_size: sp(13)
+    size_hint_y: None
+    height: dp(48)
+    canvas.before:
+        Color:
+            rgba: (.93, .95, .98, 1) if self.state == 'normal' else (.86, .91, .97, 1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(15)]
+
+<IconButton@Button>:
+    background_normal: ''
+    background_down: ''
+    background_color: 0, 0, 0, 0
+    color: .10, .19, .34, 1
+    font_size: sp(21)
+    size_hint: (None, None)
+    size: (dp(46), dp(46))
+    canvas.before:
+        Color:
+            rgba: (.92, .95, .99, 1) if self.state == 'normal' else (.84, .90, .98, 1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(15)]
+
+<PendoCard@BoxLayout>:
+    orientation: 'vertical'
+    padding: dp(16)
+    spacing: dp(9)
+    size_hint_y: None
+    height: self.minimum_height
+    canvas.before:
+        Color:
+            rgba: (1, 1, 1, 1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(20)]
+
+<SectionHeading@Label>:
+    color: .07, .12, .22, 1
+    font_size: sp(21)
+    bold: True
+    size_hint_y: None
+    height: dp(34)
+    halign: 'left'
+    valign: 'middle'
+    text_size: self.size
+
+<MutedText@Label>:
+    color: .44, .51, .61, 1
+    font_size: sp(12)
+    size_hint_y: None
+    height: dp(24)
+    halign: 'left'
+    valign: 'middle'
+    text_size: self.size
+
+<BottomNavigation@BoxLayout>:
+    size_hint_y: None
+    height: dp(70)
+    padding: [dp(8), dp(7), dp(8), dp(7)]
+    spacing: dp(5)
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<LoginScreen>:
+    name: 'login'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: [dp(24), dp(28), dp(24), dp(20)]
+        spacing: dp(13)
+        canvas.before:
+            Color:
+                rgba: (.955, .968, .985, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        Widget:
+            size_hint_y: .55
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: dp(112)
+            spacing: dp(4)
+            Label:
+                text: 'pendo'
+                font_size: sp(39)
+                bold: True
+                color: .07, .12, .22, 1
+                halign: 'left'
+                text_size: self.size
+            Label:
+                text: 'YOUR LIFE, IN GOOD ORDER.'
+                font_size: sp(10)
+                bold: True
+                color: .12, .29, .68, 1
+                halign: 'left'
+                text_size: self.size
+        Label:
+            text: 'Welcome back'
+            font_size: sp(25)
+            bold: True
+            color: .07, .12, .22, 1
+            size_hint_y: None
+            height: dp(34)
+            halign: 'left'
+            text_size: self.size
+        MutedText:
+            text: 'Sign in to pick up where you left off.'
+        PendoCard:
+            TextInput:
+                id: email
+                hint_text: 'Email address'
+                multiline: False
+                size_hint_y: None
+                height: dp(52)
+                padding: [dp(15), dp(14)]
+                background_normal: ''
+                background_active: ''
+                background_color: (.95, .97, .99, 1)
+                foreground_color: (.10, .16, .25, 1)
+                cursor_color: (.12, .29, .68, 1)
+            TextInput:
+                id: password
+                hint_text: 'Password'
+                password: True
+                multiline: False
+                size_hint_y: None
+                height: dp(52)
+                padding: [dp(15), dp(14)]
+                background_normal: ''
+                background_active: ''
+                background_color: (.95, .97, .99, 1)
+                foreground_color: (.10, .16, .25, 1)
+                cursor_color: (.12, .29, .68, 1)
+                on_text_validate: app.login(email.text, self.text)
+            PrimaryButton:
+                text: 'Sign in'
+                on_release: app.login(email.text, password.text)
+            SoftButton:
+                text: 'Continue with Google'
+                on_release: app.google_sign_in()
+            BoxLayout:
+                size_hint_y: None
+                height: dp(40)
+                spacing: dp(8)
+                SoftButton:
+                    text: 'Create account'
+                    on_release: app.signup()
+                SoftButton:
+                    text: 'Forgot password?'
+                    on_release: app.reset_password(email.text)
+        Widget:
+            size_hint_y: .18
+        SoftButton:
+            text: 'Continue in offline demo mode'
+            on_release: app.continue_demo()
+        Label:
+            text: 'Your plans, tasks and essentials — together.'
+            color: .53, .59, .67, 1
+            font_size: sp(11)
+            size_hint_y: None
+            height: dp(24)
+
+<PlanScreen>:
+    name: 'plans'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(20)
+        spacing: dp(12)
+        canvas.before:
+            Color:
+                rgba: (.955, .968, .985, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        BoxLayout:
+            size_hint_y: None
+            height: dp(48)
+            IconButton:
+                text: '‹'
+                on_release: app.go('login')
+            SectionHeading:
+                text: 'Choose your plan'
+        MutedText:
+            text: 'Start simple. Upgrade when you need more.'
+        ScrollView:
+            do_scroll_x: False
+            GridLayout:
+                cols: 1
+                spacing: dp(12)
+                size_hint_y: None
+                height: self.minimum_height
+                PendoCard:
+                    Label:
+                        text: 'FREE'
+                        bold: True
+                        font_size: sp(11)
+                        color: .12, .29, .68, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(20)
+                    Label:
+                        text: 'R0'
+                        bold: True
+                        font_size: sp(29)
+                        color: .07, .12, .22, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(40)
+                    MutedText:
+                        text: 'Core tasks, calendar, lists and personal organisation.'
+                    PrimaryButton:
+                        text: 'Continue with Free'
+                        on_release: app.choose_plan('Free')
+                PendoCard:
+                    Label:
+                        text: 'PLUS  ·  MOST POPULAR'
+                        bold: True
+                        font_size: sp(11)
+                        color: .12, .29, .68, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(20)
+                    Label:
+                        text: 'R29.99 / month'
+                        bold: True
+                        font_size: sp(25)
+                        color: .07, .12, .22, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(36)
+                    MutedText:
+                        text: 'More capacity, advanced calendar tools and search.'
+                    SoftButton:
+                        text: 'Plus · Checkout not connected'
+                        on_release: app.choose_plan('Plus')
+                PendoCard:
+                    Label:
+                        text: 'PREMIUM'
+                        bold: True
+                        font_size: sp(11)
+                        color: .12, .29, .68, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(20)
+                    Label:
+                        text: 'R59.99 / month'
+                        bold: True
+                        font_size: sp(25)
+                        color: .07, .12, .22, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(36)
+                    MutedText:
+                        text: 'Everything in Plus, with shared tools and insights.'
+                    SoftButton:
+                        text: 'Premium · Checkout not connected'
+                        on_release: app.choose_plan('Premium')
+
+<HomeScreen>:
+    name: 'home'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: [dp(17), dp(12), dp(17), 0]
+        spacing: dp(8)
+        canvas.before:
+            Color:
+                rgba: (.955, .968, .985, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        BoxLayout:
+            size_hint_y: None
+            height: dp(54)
+            BoxLayout:
+                orientation: 'vertical'
+                spacing: 0
+                Label:
+                    text: 'pendo'
+                    font_size: sp(23)
+                    bold: True
+                    color: .07, .12, .22, 1
+                    halign: 'left'
+                    text_size: self.size
+                Label:
+                    text: 'YOUR PERSONAL SPACE'
+                    font_size: sp(9)
+                    bold: True
+                    color: .12, .29, .68, 1
+                    halign: 'left'
+                    text_size: self.size
+            Widget:
+            IconButton:
+                text: '⚙'
+                on_release: app.go('settings')
+        ScrollView:
+            do_scroll_x: False
+            bar_width: dp(2)
+            GridLayout:
+                cols: 1
+                spacing: dp(13)
+                size_hint_y: None
+                height: self.minimum_height
+                BoxLayout:
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: dp(78)
+                    spacing: dp(3)
+                    Label:
+                        text: 'Good day, ' + app.username
+                        font_size: sp(24)
+                        bold: True
+                        color: .07, .12, .22, 1
+                        halign: 'left'
+                        text_size: self.size
+                    MutedText:
+                        text: 'Make space for what matters today.'
+                PendoCard:
+                    canvas.before:
+                        Color:
+                            rgba: (.08, .16, .31, 1)
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [dp(22)]
+                    Label:
+                        text: 'YOUR DAY, AT A GLANCE'
+                        font_size: sp(10)
+                        bold: True
+                        color: (.72, .80, .94, 1)
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(20)
+                    Label:
+                        text: 'A little progress adds up.'
+                        font_size: sp(21)
+                        bold: True
+                        color: 1, 1, 1, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(34)
+                    Label:
+                        text: 'Keep your priorities close and your day in balance.'
+                        font_size: sp(12)
+                        color: (.82, .87, .95, 1)
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(24)
+                    SoftButton:
+                        text: '＋  Add a task'
+                        on_release: app.go('tasks')
+                Label:
+                    text: 'YOUR OVERVIEW'
+                    font_size: sp(11)
+                    bold: True
+                    color: .43, .50, .60, 1
+                    size_hint_y: None
+                    height: dp(20)
+                    halign: 'left'
+                    text_size: self.size
+                GridLayout:
+                    cols: 3
+                    spacing: dp(8)
+                    size_hint_y: None
+                    height: dp(88)
+                    PendoCard:
+                        padding: dp(10)
+                        Label:
+                            text: '✓'
+                            font_size: sp(20)
+                            color: .12, .29, .68, 1
+                        Label:
+                            text: 'Tasks'
+                            font_size: sp(10)
+                            color: .35, .43, .54, 1
+                    PendoCard:
+                        padding: dp(10)
+                        Label:
+                            text: '▦'
+                            font_size: sp(20)
+                            color: .12, .29, .68, 1
+                        Label:
+                            text: 'Calendar'
+                            font_size: sp(10)
+                            color: .35, .43, .54, 1
+                    PendoCard:
+                        padding: dp(10)
+                        Label:
+                            text: 'R'
+                            font_size: sp(20)
+                            color: .12, .29, .68, 1
+                        Label:
+                            text: 'Bills'
+                            font_size: sp(10)
+                            color: .35, .43, .54, 1
+                Label:
+                    text: 'QUICK ACCESS'
+                    font_size: sp(11)
+                    bold: True
+                    color: .43, .50, .60, 1
+                    size_hint_y: None
+                    height: dp(20)
+                    halign: 'left'
+                    text_size: self.size
+                GridLayout:
+                    cols: 2
+                    spacing: dp(9)
+                    size_hint_y: None
+                    height: dp(194)
+                    SoftButton:
+                        text: '✓   Tasks & reminders'
+                        on_release: app.go('tasks')
+                    SoftButton:
+                        text: '▦   Calendar'
+                        on_release: app.go('calendar')
+                    SoftButton:
+                        text: 'R   Bills & subscriptions'
+                        on_release: app.go('bills')
+                    SoftButton:
+                        text: '☷   Lists'
+                        on_release: app.go('lists')
+                    SoftButton:
+                        text: '▤   Documents'
+                        on_release: app.go('documents')
+                    SoftButton:
+                        text: '◎   Goals & habits'
+                        on_release: app.go('goals')
+                PendoCard:
+                    Label:
+                        text: 'YOUR PLAN'
+                        font_size: sp(10)
+                        bold: True
+                        color: .43, .50, .60, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(18)
+                    Label:
+                        text: app.plan.upper() + '  ·  PENDO'
+                        font_size: sp(18)
+                        bold: True
+                        color: .07, .12, .22, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(28)
+                    SoftButton:
+                        text: 'Manage plan'
+                        on_release: app.go('plans')
+        BottomNavigation:
+            SoftButton:
+                text: '⌂\\nHome'
+                on_release: app.go('home')
+            SoftButton:
+                text: '▦\\nExplore'
+                on_release: app.go('more')
+            SoftButton:
+                text: '○\\nAccount'
+                on_release: app.go('settings')
+
+<ModuleScreen>:
+    name: 'module'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: [dp(17), dp(12), dp(17), 0]
+        spacing: dp(9)
+        canvas.before:
+            Color:
+                rgba: (.955, .968, .985, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        BoxLayout:
+            size_hint_y: None
+            height: dp(52)
+            IconButton:
+                text: '‹'
+                on_release: app.go('home')
+            Label:
+                text: app.module_title
+                font_size: sp(19)
+                bold: True
+                color: .07, .12, .22, 1
+                halign: 'left'
+                text_size: self.size
+            IconButton:
+                text: '⋯'
+                on_release: app.go('more')
+        PendoCard:
+            Label:
+                text: 'ADD SOMETHING NEW'
+                color: .12, .29, .68, 1
+                font_size: sp(10)
+                bold: True
+                halign: 'left'
+                text_size: self.width, None
+                size_hint_y: None
+                height: dp(18)
+            TextInput:
+                id: module_entry
+                hint_text: app.module_hint
+                multiline: False
+                size_hint_y: None
+                height: dp(50)
+                padding: [dp(13), dp(13)]
+                background_normal: ''
+                background_active: ''
+                background_color: (.95, .97, .99, 1)
+                foreground_color: (.10, .16, .25, 1)
+                cursor_color: (.12, .29, .68, 1)
+                on_text_validate: app.add_module_item(self.text)
+            PrimaryButton:
+                text: '＋  Add to ' + app.module_title
+                on_release: app.add_module_item(module_entry.text)
+        Label:
+            id: sync_status
+            text: app.sync_status
+            color: .42, .49, .59, 1
+            font_size: sp(11)
+            size_hint_y: None
+            height: dp(22)
+            halign: 'left'
+            text_size: self.size
+        Label:
+            text: 'YOUR ITEMS'
+            color: .43, .50, .60, 1
+            font_size: sp(10)
+            bold: True
+            size_hint_y: None
+            height: dp(20)
+            halign: 'left'
+            text_size: self.size
+        ScrollView:
+            do_scroll_x: False
+            bar_width: dp(2)
+            GridLayout:
+                id: module_items
+                cols: 1
+                spacing: dp(9)
+                size_hint_y: None
+                height: self.minimum_height
+        BottomNavigation:
+            SoftButton:
+                text: '⌂\\nHome'
+                on_release: app.go('home')
+            SoftButton:
+                text: '▦\\nExplore'
+                on_release: app.go('more')
+            SoftButton:
+                text: '○\\nAccount'
+                on_release: app.go('settings')
+
+<MoreScreen>:
+    name: 'more'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: [dp(17), dp(15), dp(17), 0]
+        spacing: dp(9)
+        canvas.before:
+            Color:
+                rgba: (.955, .968, .985, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        SectionHeading:
+            text: 'Explore Pendo'
+        MutedText:
+            text: 'Your tools, all in one place.'
+        ScrollView:
+            do_scroll_x: False
+            GridLayout:
+                cols: 1
+                spacing: dp(9)
+                size_hint_y: None
+                height: self.minimum_height
+                PendoCard:
+                    Label:
+                        text: 'ORGANISE'
+                        font_size: sp(10)
+                        bold: True
+                        color: .43, .50, .60, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(18)
+                    SoftButton:
+                        text: '✓   Tasks & reminders'
+                        on_release: app.go('tasks')
+                    SoftButton:
+                        text: '▦   Calendar & events'
+                        on_release: app.go('calendar')
+                    SoftButton:
+                        text: '☷   Lists & collections'
+                        on_release: app.go('lists')
+                PendoCard:
+                    Label:
+                        text: 'KEEP TRACK'
+                        font_size: sp(10)
+                        bold: True
+                        color: .43, .50, .60, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(18)
+                    SoftButton:
+                        text: 'R   Bills & subscriptions'
+                        on_release: app.go('bills')
+                    SoftButton:
+                        text: '▤   Documents'
+                        on_release: app.go('documents')
+                PendoCard:
+                    Label:
+                        text: 'GROW'
+                        font_size: sp(10)
+                        bold: True
+                        color: .43, .50, .60, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(18)
+                    SoftButton:
+                        text: '◎   Goals & habits'
+                        on_release: app.go('goals')
+                PendoCard:
+                    Label:
+                        text: 'PENDO ACCOUNT'
+                        font_size: sp(10)
+                        bold: True
+                        color: .43, .50, .60, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: dp(18)
+                    SoftButton:
+                        text: '✧   Plans & upgrades'
+                        on_release: app.go('plans')
+                    SoftButton:
+                        text: '⚙   Settings'
+                        on_release: app.go('settings')
+        BottomNavigation:
+            SoftButton:
+                text: '⌂\\nHome'
+                on_release: app.go('home')
+            SoftButton:
+                text: '▦\\nExplore'
+                on_release: app.go('more')
+            SoftButton:
+                text: '○\\nAccount'
+                on_release: app.go('settings')
+
+<SettingsScreen>:
+    name: 'settings'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: [dp(17), dp(15), dp(17), 0]
+        spacing: dp(11)
+        canvas.before:
+            Color:
+                rgba: (.955, .968, .985, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        SectionHeading:
+            text: 'Your account'
+        MutedText:
+            text: 'Manage your profile and preferences.'
+        PendoCard:
+            Label:
+                text: 'PENDO PROFILE'
+                color: .12, .29, .68, 1
+                bold: True
+                font_size: sp(10)
+                halign: 'left'
+                text_size: self.width, None
+                size_hint_y: None
+                height: dp(18)
+            Label:
+                text: app.username
+                color: .07, .12, .22, 1
+                font_size: sp(21)
+                bold: True
+                halign: 'left'
+                text_size: self.width, None
+                size_hint_y: None
+                height: dp(32)
+            MutedText:
+                text: 'Current plan: ' + app.plan
+        PendoCard:
+            Label:
+                text: 'PREFERENCES'
+                color: .43, .50, .60, 1
+                font_size: sp(10)
+                bold: True
+                halign: 'left'
+                text_size: self.width, None
+                size_hint_y: None
+                height: dp(18)
+            SoftButton:
+                text: '✧   Manage subscription'
+                on_release: app.go('plans')
+            SoftButton:
+                text: '↻   Sync status'
+                on_release: app.notice(app.sync_status or 'No recent cloud sync status.')
+            SoftButton:
+                text: '⇥   Sign out'
+                on_release: app.sign_out()
+        Widget:
+            size_hint_y: 1
+        BottomNavigation:
+            SoftButton:
+                text: '⌂\\nHome'
+                on_release: app.go('home')
+            SoftButton:
+                text: '▦\\nExplore'
+                on_release: app.go('more')
+            SoftButton:
+                text: '○\\nAccount'
+                on_release: app.go('settings')
+
+<AdminScreen>:
+    name: 'admin'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(18)
+        spacing: dp(12)
+        canvas.before:
+            Color:
+                rgba: (.955, .968, .985, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        SectionHeading:
+            text: 'Owner dashboard'
+        PendoCard:
+            Label:
+                text: 'PREVIEW ONLY'
+                color: .70, .40, .12, 1
+                bold: True
+                font_size: sp(10)
+                halign: 'left'
+                text_size: self.width, None
+                size_hint_y: None
+                height: dp(20)
+            MutedText:
+                text: 'Business analytics and revenue are not connected yet.'
+        SoftButton:
+            text: 'Back to Pendo'
+            on_release: app.go('more')
