@@ -67,7 +67,7 @@ class PendoBackend:
         except urllib.error.URLError as exc:
             reason = getattr(exc, "reason", exc)
             if isinstance(reason, ssl.SSLError):
-                detail = "Secure connection failed (SSL certificate/TLS error)."
+                detail = "Secure connection failed (SSL certificate/TLS error). Runtime detail: " + str(reason)
             elif isinstance(reason, socket.gaierror):
                 detail = "The server address could not be found (DNS error)."
             elif isinstance(reason, (TimeoutError, socket.timeout)):
