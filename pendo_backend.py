@@ -7,7 +7,10 @@ import urllib.request
 import urllib.parse
 import socket
 import ssl
-import certifi
+try:
+    import certifi
+except ImportError:  # System CA store remains a secure fallback.
+    certifi = None
 
 
 class BackendError(Exception):
@@ -28,14 +31,34 @@ class PendoBackend:
         try:
             with open(self.config_path, "r", encoding="utf-8") as f:
                 cfg = json.load(f)
-            self.url = str(cfg.get("supabase_url", "")).strip().rstrip("/")
-            self.anon_key = str(cfg.get("supabase_anon_key", "")).strip()
-        except (OSError, ValueError):
+            if not isinstance(cfg, dict):
+                raise ValueError("Backend configuration must be a JSON object.")
+            self.url = str(cfg.get("supabase_url", "") or "").strip().rstrip("/")
+            self.anon_key = str(cfg.get("supabase_anon_key", "") or "").strip()
+        except (OSError, ValueError, TypeError):
             self.url, self.anon_key = "", ""
 
     @property
     def configured(self):
-        return bool(self.url.startswith("https://") and self.anon_key)
+        try:
+            parsed = urllib.parse.urlsplit(self.url)
+            valid_url = parsed.scheme == "https" and bool(parsed.netloc) and not parsed.username and not parsed.password
+        except ValueError:
+            valid_url = False
+        return bool(valid_url and self.anon_key)
+
+    @staticmethod
+    def _ssl_context():
+        # certifi gives Android a bundled CA list; retain certificate
+        # verification and fall back to Python's system trust store if absent.
+        if certifi is not None:
+            try:
+                ca_file = certifi.where()
+                if ca_file and os.path.isfile(ca_file):
+                    return ssl.create_default_context(cafile=ca_file)
+            except (OSError, AttributeError):
+                pass
+        return ssl.create_default_context()
 
     def _request(self, path, method="GET", payload=None, extra_headers=None, _retry=True):
         if not self.configured:
@@ -48,10 +71,14 @@ class PendoBackend:
             headers.update(extra_headers)
         req = urllib.request.Request(self.url + path, data=data, headers=headers, method=method)
         try:
-            ssl_context = ssl.create_default_context(cafile=certifi.where())
-            with urllib.request.urlopen(req, timeout=15, context=ssl_context) as response:
+            with urllib.request.urlopen(req, timeout=20, context=self._ssl_context()) as response:
                 raw = response.read().decode("utf-8")
-                return json.loads(raw) if raw else None
+                if not raw:
+                    return None
+                try:
+                    return json.loads(raw)
+                except ValueError as exc:
+                    raise BackendError("Supabase returned an unreadable response.") from exc
         except urllib.error.HTTPError as exc:
             # Access tokens last ~1 hour; renew once with the refresh token, then retry.
             if exc.code == 401 and _retry and self.refresh_token and not path.startswith("/auth/"):
@@ -114,6 +141,8 @@ class PendoBackend:
         try:
             with open(self.config_path, "r", encoding="utf-8") as config_file:
                 config = json.load(config_file)
+            if not isinstance(config, dict):
+                return ""
             return str(config.get("auth_redirect_url", "") or "").strip()
         except (OSError, ValueError, TypeError):
             return ""
