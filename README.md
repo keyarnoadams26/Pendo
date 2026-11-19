@@ -32,7 +32,11 @@ Only the public anon key belongs in the mobile app. Never include a Supabase ser
 
 ## Subscription and payment status
 
-The plan-selection screen currently records a selected plan in the user profile. It does **not** charge a customer, create a verified subscription, or process recurring payments. A payment provider, secure server-side checkout/webhook verification, subscription state management and cancellation flow must be implemented before paid plans are sold.
+The plan-selection screen currently records a selected plan in the user profile. It does **not** charge a customer, create a verified subscription, or process recurring payments.
+
+**Planned South African payment provider: PayFast.** PayFast documents recurring subscriptions and custom API integration, making it a sensible first provider to evaluate for Pendo's monthly Plus and Premium plans. This is a design decision only: no PayFast account, credentials, checkout, or live payments are connected yet. Confirm merchant eligibility, fees, settlement rules and recurring-billing terms with PayFast before launch. See the [PayFast recurring billing overview](https://support.payfast.help/portal/en/kb/articles/can-i-receive-recurring-payments-20-9-2022) and [developer documentation](https://developers.payfast.co.za/docs#recurring_billing).
+
+The eventual integration must create checkout sessions on a trusted server, validate payment notifications and signatures server-side, store subscription state in the database, and only then grant paid entitlements. Never put merchant secrets or a Supabase service-role key in the Android app. A responsible adult/business owner must handle merchant registration, contracts and payment-account administration.
 
 ## Android build
 
